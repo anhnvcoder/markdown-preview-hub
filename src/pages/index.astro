@@ -1,0 +1,18 @@
+---
+import '../styles/global.css'
+import '../styles/markdown.css'
+import 'uno.css'
+import { App } from '../components/App'
+---
+
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MD Preview Hub</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%237c3aed' width='32' height='32' rx='6'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' fill='white' font-weight='bold' font-size='14'>MD</text></svg>" />
+  </head>
+  <body class="app-layout">
+    <App client:only="preact" />
+  </body>
+</html>

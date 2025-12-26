@@ -1,0 +1,262 @@
+/**
+ * Markdown body styles
+ * Gradient h1, code blocks, tables, etc.
+ */
+
+/* Markdown container */
+.markdown-body {
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+/* Gradient h1 */
+.markdown-body h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 2rem 0 1.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent), var(--info));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.markdown-body h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 1.75rem 0 1rem;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.markdown-body h3 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+}
+
+/* Paragraphs */
+.markdown-body p {
+  margin: 1rem 0;
+}
+
+/* Links */
+.markdown-body a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-body a:hover {
+  color: var(--accent);
+}
+
+/* Lists */
+.markdown-body ul,
+.markdown-body ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.markdown-body li {
+  margin: 0.25rem 0;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
+}
+
+/* Blockquotes */
+.markdown-body blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid var(--primary);
+  background: var(--muted);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.markdown-body blockquote p {
+  margin: 0.5rem 0;
+}
+
+/* Code blocks - GitHub style */
+/* Full width wrapper with copy button at right edge */
+.code-block-wrapper {
+  position: relative;
+  display: flex;
+  margin: 1rem 0;
+}
+
+/* Floating copy button - absolute to wrapper, always at right edge */
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  color: var(--muted-foreground);
+  z-index: 10;
+}
+
+/* Light mode copy button - GitHub style */
+.light .copy-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(31, 35, 40, 0.15);
+  color: #57606a;
+}
+
+.light .copy-btn:hover {
+  background: #f3f4f6;
+  color: #1f2328;
+}
+
+.code-block-wrapper:hover .copy-btn {
+  opacity: 1;
+}
+
+.copy-btn:hover {
+  background: rgba(128, 128, 128, 0.4);
+  color: var(--foreground);
+}
+
+.copy-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.copy-btn.copied {
+  color: var(--success, #22c55e);
+  opacity: 1;
+}
+
+.markdown-body .shiki {
+  margin: 0 !important;
+  padding: 0.5rem 1rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  border-radius: 0.375rem;
+  /* Override Shiki inline styles for consistent theming */
+  background-color: var(--muted) !important;
+}
+
+/* Light mode code blocks */
+.light .markdown-body .shiki {
+  background-color: #f6f8fa !important;
+}
+
+/* Dark mode code blocks - GitHub uses slightly lighter bg */
+.dark .markdown-body .shiki {
+  background-color: #21262C !important;
+}
+
+.markdown-body .shiki code {
+  font-family: inherit;
+}
+
+/* Plain text code blocks - stronger styling for unsupported languages */
+.markdown-body .shiki-plain {
+  background: var(--muted);
+}
+
+.markdown-body .shiki-plain[data-theme="github-dark"] {
+  background: #24292e;
+}
+
+.markdown-body .shiki-plain[data-theme="github-light"] {
+  background: #f6f8fa;
+}
+
+.markdown-body .shiki-plain code {
+  color: var(--foreground);
+}
+
+/* Inline code */
+.markdown-body code:not(.shiki code) {
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.375rem;
+  font-size: 0.875em;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+/* Tables */
+.markdown-body table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.markdown-body th {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.markdown-body tr:hover {
+  background: var(--muted);
+}
+
+/* Horizontal rule */
+.markdown-body hr {
+  margin: 2rem 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Images */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Strong and em */
+.markdown-body strong {
+  font-weight: 600;
+}
+
+.markdown-body em {
+  font-style: italic;
+}
+
+/* Task lists (checkboxes) */
+.markdown-body input[type="checkbox"] {
+  margin-right: 0.5rem;
+}

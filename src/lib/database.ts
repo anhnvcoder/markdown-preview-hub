@@ -159,7 +159,7 @@ export async function clearAllFiles(): Promise<void> {
 // ============ Settings ============
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'dark',
+  theme: 'light',
   pollingActiveInterval: 30000, // 30s for active file
   directoryScanInterval: 60000, // 60s for directory scan
   ignoredFolders: [

@@ -6,7 +6,7 @@ import { signal } from '@preact/signals';
 import { getSettings } from '../lib/database';
 
 // Current theme: 'dark' or 'light'
-export const currentTheme = signal<'dark' | 'light'>('dark');
+export const currentTheme = signal<'dark' | 'light'>('light');
 
 // Show TOC panel (default false, loaded from settings)
 export const showToc = signal<boolean>(false);

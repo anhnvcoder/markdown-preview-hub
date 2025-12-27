@@ -351,7 +351,9 @@ export function CommandPalette() {
                               : 'text-muted-foreground'
                           }`}
                         />
-                        <span class='truncate'>{folder.path}</span>
+                        <span class='truncate' title={folder.path}>
+                          {folder.path}
+                        </span>
                         {isSelected && (
                           <div class='i-lucide-check w-3 h-3 ml-auto text-primary shrink-0' />
                         )}
@@ -391,10 +393,16 @@ export function CommandPalette() {
                 >
                   <div class='i-lucide-file-text w-4 h-4 text-muted-foreground shrink-0' />
                   <div class='flex-1 min-w-0'>
-                    <div class='text-sm truncate'>
+                    <div
+                      class='text-sm truncate'
+                      title={result.file.virtualName}
+                    >
                       {result.file.virtualName}
                     </div>
-                    <div class='text-xs text-muted-foreground truncate'>
+                    <div
+                      class='text-xs text-muted-foreground truncate'
+                      title={`L${result.lineNumber}: ${result.matchedLine}`}
+                    >
                       <span class='text-primary/70'>L{result.lineNumber}:</span>{' '}
                       {result.matchedLine}
                     </div>
@@ -419,8 +427,13 @@ export function CommandPalette() {
                 >
                   <div class='i-lucide-file-text w-4 h-4 text-muted-foreground shrink-0' />
                   <div class='flex-1 min-w-0'>
-                    <div class='text-sm truncate'>{file.virtualName}</div>
-                    <div class='text-xs text-muted-foreground truncate'>
+                    <div class='text-sm truncate' title={file.virtualName}>
+                      {file.virtualName}
+                    </div>
+                    <div
+                      class='text-xs text-muted-foreground truncate'
+                      title={file.path}
+                    >
                       {file.path}
                     </div>
                   </div>

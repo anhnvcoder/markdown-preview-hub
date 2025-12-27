@@ -85,13 +85,15 @@ export function ConflictModal() {
           <div class='grid grid-cols-2 gap-2'>
             <div class='p-2 bg-muted rounded text-xs'>
               <div class='text-muted-foreground mb-1'>Web</div>
-              <pre class='truncate'>
+              <pre class='truncate' title={file.contentOverride?.slice(0, 200)}>
                 {file.contentOverride?.slice(0, 100)}...
               </pre>
             </div>
             <div class='p-2 bg-muted rounded text-xs'>
               <div class='text-muted-foreground mb-1'>Disk</div>
-              <pre class='truncate'>{diskContent.slice(0, 100)}...</pre>
+              <pre class='truncate' title={diskContent.slice(0, 200)}>
+                {diskContent.slice(0, 100)}...
+              </pre>
             </div>
           </div>
         </div>

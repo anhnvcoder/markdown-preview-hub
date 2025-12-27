@@ -124,7 +124,9 @@ export function UploadWarningModal() {
               {warning.existingFiles.slice(0, 5).map((f) => (
                 <div key={f.id} class='text-xs flex items-center gap-1 py-0.5'>
                   <div class='i-lucide-file-text w-3 h-3' />
-                  <span class='truncate'>{f.virtualName}</span>
+                  <span class='truncate' title={f.virtualName}>
+                    {f.virtualName}
+                  </span>
                   {f.isDirty && <span class='text-warning'>(unsaved)</span>}
                 </div>
               ))}

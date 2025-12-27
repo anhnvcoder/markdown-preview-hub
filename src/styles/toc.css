@@ -9,7 +9,6 @@
   position: fixed;
   right: 16px;
   top: 156px;
-  width: 220px;
   max-height: calc(100vh - 180px);
   background: var(--card);
   border: 1px solid var(--border);
@@ -20,12 +19,41 @@
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(8px);
-  transition: width 0.2s ease, opacity 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .toc-panel.toc-collapsed {
   width: auto;
   min-width: 120px;
+}
+
+/* ============ TOC Resize Handle ============ */
+.toc-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 100;
+  transition: background 0.1s ease;
+}
+
+/* Hover/active state - subtle highlight */
+.toc-resize-handle:hover,
+.toc-resize-handle.resizing {
+  background: var(--border);
+}
+
+/* Expand click area for easier grabbing */
+.toc-resize-handle::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: 0;
+  bottom: 0;
 }
 
 .toc-header {

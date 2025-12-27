@@ -11,6 +11,23 @@ export const currentTheme = signal<'dark' | 'light'>('light');
 // Show TOC panel (default false, loaded from settings)
 export const showToc = signal<boolean>(false);
 
+// TOC panel width - persisted in localStorage
+const DEFAULT_TOC_WIDTH = 220;
+const MIN_TOC_WIDTH = 150;
+const MAX_TOC_WIDTH = 400;
+
+export const tocWidth = signal<number>(
+  typeof localStorage !== 'undefined'
+    ? parseInt(
+        localStorage.getItem('md-preview-toc-width') ||
+          String(DEFAULT_TOC_WIDTH),
+        10
+      )
+    : DEFAULT_TOC_WIDTH
+);
+
+export { MIN_TOC_WIDTH, MAX_TOC_WIDTH };
+
 /**
  * Initialize theme from DOM and set up observer
  */

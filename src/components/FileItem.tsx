@@ -394,7 +394,9 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <span class='flex-1 text-sm truncate'>{node.virtualName}</span>
+          <span class='flex-1 text-sm truncate' title={node.virtualName}>
+            {node.virtualName}
+          </span>
         )}
 
         {/* Status icon and actions */}

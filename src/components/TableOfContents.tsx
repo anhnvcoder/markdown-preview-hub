@@ -1,12 +1,13 @@
 /**
  * TableOfContents component
  * Floating TOC panel with active section highlighting
- * Desktop: Fixed panel on right side
+ * Desktop: Fixed panel on right side with resizable width
  * Mobile: FAB button + drawer from bottom
  */
 import type { RefObject } from 'preact';
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { TocHeading } from '../lib/markdown';
+import { MAX_TOC_WIDTH, MIN_TOC_WIDTH, tocWidth } from '../stores/theme-store';
 
 interface TableOfContentsProps {
   headings: TocHeading[];
@@ -20,6 +21,9 @@ export function TableOfContents({
   const [activeId, setActiveId] = useState<string>('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const isResizingRef = useRef(false);
+  const resizeHandleRef = useRef<HTMLDivElement>(null);
+  const currentWidth = tocWidth.value;
 
   // Track active heading with IntersectionObserver
   useEffect(() => {
@@ -63,6 +67,45 @@ export function TableOfContents({
     return () => observer.disconnect();
   }, [headings, containerRef]);
 
+  // TOC resize handlers
+  const handleResizeStart = useCallback((e: Event) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    resizeHandleRef.current?.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  // Add global mouse listeners for resize
+  useEffect(() => {
+    const handleResizeMove = (e: MouseEvent) => {
+      if (!isResizingRef.current) return;
+      // Calculate width from right edge of viewport
+      const newWidth = Math.min(
+        MAX_TOC_WIDTH,
+        Math.max(MIN_TOC_WIDTH, window.innerWidth - e.clientX - 16)
+      );
+      tocWidth.value = newWidth;
+    };
+
+    const handleResizeEnd = () => {
+      if (!isResizingRef.current) return;
+      isResizingRef.current = false;
+      resizeHandleRef.current?.classList.remove('resizing');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Persist to localStorage
+      localStorage.setItem('md-preview-toc-width', String(tocWidth.value));
+    };
+
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, []);
+
   const handleClick = useCallback((id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -84,7 +127,11 @@ export function TableOfContents({
           class={`toc-item ${activeId === heading.id ? 'toc-active' : ''}`}
           style={{ paddingLeft: `${(heading.level - minLevel) * 12 + 12}px` }}
         >
-          <button class='toc-link' onClick={() => handleClick(heading.id)}>
+          <button
+            class='toc-link'
+            onClick={() => handleClick(heading.id)}
+            title={heading.text}
+          >
             {heading.text}
           </button>
         </li>
@@ -98,7 +145,17 @@ export function TableOfContents({
       <nav
         class={`toc-panel toc-desktop ${isCollapsed ? 'toc-collapsed' : ''}`}
         aria-label='Table of contents'
+        style={{ width: isCollapsed ? 'auto' : `${currentWidth}px` }}
       >
+        {/* Resize handle - on left side */}
+        {!isCollapsed && (
+          <div
+            ref={resizeHandleRef}
+            class='toc-resize-handle'
+            onMouseDown={handleResizeStart}
+          />
+        )}
+
         {/* Header - title left, icon right */}
         <div class='toc-header'>
           <span class='toc-title'>Contents</span>

@@ -73,7 +73,9 @@ export function TabBar() {
               )}
 
               {/* File name */}
-              <span class='text-xs truncate max-w-32'>{file.virtualName}</span>
+              <span class='text-xs truncate max-w-32' title={file.virtualName}>
+                {file.virtualName}
+              </span>
 
               {/* Close button - always visible on active, hover on others */}
               <button

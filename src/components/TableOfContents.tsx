@@ -1,6 +1,8 @@
 /**
  * TableOfContents component
  * Floating TOC panel with active section highlighting
+ * Desktop: Fixed panel on right side
+ * Mobile: FAB button + drawer from bottom
  */
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { RefObject } from 'preact';
@@ -14,6 +16,7 @@ interface TableOfContentsProps {
 export function TableOfContents({ headings, containerRef }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Track active heading with IntersectionObserver
   useEffect(() => {
@@ -62,48 +65,87 @@ export function TableOfContents({ headings, containerRef }: TableOfContentsProps
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setActiveId(id);
+      setIsMobileOpen(false);
     }
   }, []);
 
   // Calculate min level for proper indentation
   const minLevel = Math.min(...headings.map((h) => h.level));
 
-  return (
-    <nav
-      class={`toc-panel ${isCollapsed ? 'toc-collapsed' : ''}`}
-      aria-label="Table of contents"
-    >
-      {/* Header - title left, icon right */}
-      <div class="toc-header">
-        <span class="toc-title">Contents</span>
-        <button
-          class="toc-toggle"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          aria-label={isCollapsed ? 'Expand TOC' : 'Collapse TOC'}
+  // Render TOC list (shared between desktop and mobile)
+  const renderTocList = () => (
+    <ul class="toc-list">
+      {headings.map((heading) => (
+        <li
+          key={heading.id}
+          class={`toc-item ${activeId === heading.id ? 'toc-active' : ''}`}
+          style={{ paddingLeft: `${(heading.level - minLevel) * 12 + 12}px` }}
         >
-          <div class={`i-lucide-chevron-${isCollapsed ? 'right' : 'down'} w-4 h-4`} />
-        </button>
-      </div>
+          <button
+            class="toc-link"
+            onClick={() => handleClick(heading.id)}
+          >
+            {heading.text}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
 
-      {/* TOC list */}
-      {!isCollapsed && (
-        <ul class="toc-list">
-          {headings.map((heading) => (
-            <li
-              key={heading.id}
-              class={`toc-item ${activeId === heading.id ? 'toc-active' : ''}`}
-              style={{ paddingLeft: `${(heading.level - minLevel) * 12 + 12}px` }}
-            >
+  return (
+    <>
+      {/* Desktop TOC - hidden on mobile */}
+      <nav
+        class={`toc-panel toc-desktop ${isCollapsed ? 'toc-collapsed' : ''}`}
+        aria-label="Table of contents"
+      >
+        {/* Header - title left, icon right */}
+        <div class="toc-header">
+          <span class="toc-title">Contents</span>
+          <button
+            class="toc-toggle"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-label={isCollapsed ? 'Expand TOC' : 'Collapse TOC'}
+          >
+            <div class={`i-lucide-chevron-${isCollapsed ? 'right' : 'down'} w-4 h-4`} />
+          </button>
+        </div>
+
+        {/* TOC list */}
+        {!isCollapsed && renderTocList()}
+      </nav>
+
+      {/* Mobile FAB - shown only on mobile */}
+      <button
+        class="toc-fab"
+        onClick={() => setIsMobileOpen(true)}
+        aria-label="Open table of contents"
+      >
+        <div class="i-lucide-list w-5 h-5" />
+      </button>
+
+      {/* Mobile Drawer */}
+      {isMobileOpen && (
+        <div class="toc-drawer-overlay" onClick={() => setIsMobileOpen(false)}>
+          <nav
+            class="toc-drawer"
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Table of contents"
+          >
+            <div class="toc-drawer-header">
+              <span class="toc-title">Contents</span>
               <button
-                class="toc-link"
-                onClick={() => handleClick(heading.id)}
+                class="toc-toggle"
+                onClick={() => setIsMobileOpen(false)}
+                aria-label="Close"
               >
-                {heading.text}
+                <div class="i-lucide-x w-4 h-4" />
               </button>
-            </li>
-          ))}
-        </ul>
+            </div>
+            {renderTocList()}
+          </nav>
+        </div>
       )}
-    </nav>
+    </>
   );
 }

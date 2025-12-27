@@ -22,6 +22,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  scroll-margin-top: 5rem;
 }
 
 .markdown-body h2 {
@@ -31,12 +32,14 @@
   color: var(--foreground);
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.5rem;
+  scroll-margin-top: 5rem;
 }
 
 .markdown-body h3 {
   font-size: 1.375rem;
   font-weight: 600;
   margin: 1.5rem 0 0.75rem;
+  scroll-margin-top: 5rem;
 }
 
 .markdown-body h4,
@@ -45,6 +48,7 @@
   font-size: 1.125rem;
   font-weight: 600;
   margin: 1.25rem 0 0.5rem;
+  scroll-margin-top: 5rem;
 }
 
 /* Paragraphs */

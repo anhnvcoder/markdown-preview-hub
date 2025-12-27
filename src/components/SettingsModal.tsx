@@ -133,22 +133,22 @@ export function SettingsModal() {
 
   const handleReset = async () => {
     await saveSettings({
-      theme: 'dark',
+      theme: 'light',
       pollingActiveInterval: 30000,
       directoryScanInterval: 60000,
       ignoredFolders: DEFAULT_IGNORED,
       showToc: false,
     });
     setSettings({
-      theme: 'dark',
+      theme: 'light',
       pollingActiveInterval: 30000,
       directoryScanInterval: 60000,
       ignoredFolders: DEFAULT_IGNORED,
       showToc: false,
     });
     setIgnoredText(DEFAULT_IGNORED.join(', '));
-    document.documentElement.className = 'dark';
-    localStorage.setItem('md-preview-theme', 'dark');
+    document.documentElement.className = 'light';
+    localStorage.setItem('md-preview-theme', 'light');
     await updatePollingInterval(30000);
     showTocSignal.value = false;
   };
@@ -180,7 +180,7 @@ export function SettingsModal() {
           <div>
             <label class='block text-sm font-medium mb-2'>Theme</label>
             <div class='flex gap-2'>
-              {(['dark', 'light', 'system'] as const).map((t) => (
+              {(['light', 'dark', 'system'] as const).map((t) => (
                 <button
                   key={t}
                   class={`px-4 py-2 rounded text-sm ${
@@ -202,7 +202,7 @@ export function SettingsModal() {
             <div class='flex items-center gap-3'>
               <button
                 class={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.showToc ? 'bg-primary' : 'bg-muted'
+                  settings.showToc ? 'bg-primary' : 'bg-muted border'
                 }`}
                 onClick={handleTocToggle}
                 role='switch'

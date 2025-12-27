@@ -13,6 +13,7 @@
     "@preact/signals": "^2.5.1",
     "@unocss/astro": "^66.5.10",
     "@unocss/reset": "^66.5.10",
+    "@vite-pwa/astro": "^1.2.0",
     "astro": "^5.16.6",
     "flexsearch": "^0.8.212",
     "idb": "^8.0.3",

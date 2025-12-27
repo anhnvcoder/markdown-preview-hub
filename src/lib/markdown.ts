@@ -3,10 +3,24 @@
  * Uses web bundle for smaller size
  * - Cached MarkdownIt instance per theme to avoid memory leaks
  * - TokyoNight theme for VSCode-like colors
+ * - TOC extraction with heading IDs
  */
 import MarkdownIt from 'markdown-it';
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core';
 import { createOnigurumaEngine } from 'shiki/engine/oniguruma';
+
+/** Heading data for TOC */
+export interface TocHeading {
+  id: string;
+  text: string;
+  level: number;
+}
+
+/** Render result with html and TOC headings */
+export interface RenderResult {
+  html: string;
+  headings: TocHeading[];
+}
 
 // Lazy-loaded highlighter instance
 let highlighterPromise: Promise<HighlighterCore> | null = null;
@@ -285,15 +299,41 @@ function getMarkdownIt(
 }
 
 /**
- * Render markdown to HTML with syntax highlighting
+ * Render markdown to HTML with syntax highlighting and TOC extraction
  */
 export async function renderMarkdown(
   content: string,
   theme: 'dark' | 'light' = 'light'
-): Promise<string> {
+): Promise<RenderResult> {
   const hl = await getHighlighter();
   const md = getMarkdownIt(theme, hl);
-  return md.render(content);
+
+  // Parse tokens to extract headings
+  const tokens = md.parse(content, {});
+  const headings: TocHeading[] = [];
+  const usedIds = new Set<string>();
+
+  // Extract headings from tokens and inject IDs
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.type === 'heading_open') {
+      const level = parseInt(token.tag.slice(1), 10);
+      // Next token is the inline content
+      const contentToken = tokens[i + 1];
+      const text = contentToken?.content || '';
+      const id = slugify(text, usedIds);
+
+      // Add id attribute to heading
+      token.attrSet('id', id);
+
+      headings.push({ id, text, level });
+    }
+  }
+
+  // Render with injected IDs
+  const html = md.renderer.render(tokens, md.options, {});
+
+  return { html, headings };
 }
 
 /**
@@ -304,6 +344,33 @@ export function preloadHighlighter(): void {
 }
 
 // ============ Helpers ============
+
+/**
+ * Convert text to URL-friendly slug for heading IDs
+ * Handles duplicates by appending counter
+ */
+function slugify(text: string, usedIds: Set<string>): string {
+  let slug = text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '-') // Spaces to hyphens
+    .replace(/-+/g, '-') // Collapse multiple hyphens
+    .replace(/^-|-$/g, ''); // Trim hyphens
+
+  // Handle empty slugs
+  if (!slug) slug = 'heading';
+
+  // Handle duplicates
+  const baseSlug = slug;
+  let counter = 1;
+  while (usedIds.has(slug)) {
+    slug = `${baseSlug}-${counter++}`;
+  }
+  usedIds.add(slug);
+
+  return slug;
+}
 
 function escapeHtml(text: string): string {
   return text

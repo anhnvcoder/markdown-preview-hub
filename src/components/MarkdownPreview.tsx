@@ -1,17 +1,20 @@
 /**
  * MarkdownPreview component
- * Renders markdown content with Shiki highlighting
+ * Renders markdown content with Shiki highlighting and TOC
  */
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { renderMarkdown, preloadHighlighter } from '../lib/markdown';
+import { renderMarkdown, preloadHighlighter, type TocHeading } from '../lib/markdown';
+import { TableOfContents } from './TableOfContents';
 
 interface MarkdownPreviewProps {
   content: string;
   theme?: 'dark' | 'light';
+  showToc?: boolean;
 }
 
-export function MarkdownPreview({ content, theme = 'dark' }: MarkdownPreviewProps) {
+export function MarkdownPreview({ content, theme = 'dark', showToc = false }: MarkdownPreviewProps) {
   const [html, setHtml] = useState<string>('');
+  const [headings, setHeadings] = useState<TocHeading[]>([]);
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -27,15 +30,17 @@ export function MarkdownPreview({ content, theme = 'dark' }: MarkdownPreviewProp
     async function render() {
       setLoading(true);
       try {
-        const rendered = await renderMarkdown(content, theme);
+        const result = await renderMarkdown(content, theme);
         if (!cancelled) {
-          setHtml(rendered);
+          setHtml(result.html);
+          setHeadings(result.headings);
           setLoading(false);
         }
       } catch (err) {
         console.error('Markdown render error:', err);
         if (!cancelled) {
           setHtml(`<p class="text-destructive">Error rendering markdown</p>`);
+          setHeadings([]);
           setLoading(false);
         }
       }
@@ -86,10 +91,18 @@ export function MarkdownPreview({ content, theme = 'dark' }: MarkdownPreviewProp
   }
 
   return (
-    <div
-      ref={containerRef}
-      class="markdown-body"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div class="relative">
+      {/* TOC floating panel */}
+      {showToc && headings.length > 0 && (
+        <TableOfContents headings={headings} containerRef={containerRef} />
+      )}
+
+      {/* Markdown content */}
+      <div
+        ref={containerRef}
+        class="markdown-body"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
   );
 }

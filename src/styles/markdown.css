@@ -8,6 +8,9 @@
   color: var(--foreground);
   font-size: 1rem;
   line-height: 1.75;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 /* Gradient h1 */
@@ -98,6 +101,14 @@
   position: relative;
   display: flex;
   margin: 1rem 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.code-block-wrapper > pre {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Floating copy button - absolute to wrapper, always at right edge */

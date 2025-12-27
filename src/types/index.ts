@@ -47,4 +47,5 @@ export interface AppSettings {
   pollingActiveInterval: number;  // ms - for active file sync (default 30000)
   directoryScanInterval: number;  // ms - for new file detection (default 60000)
   ignoredFolders: string[];
+  showToc: boolean;  // Show Table of Contents panel (default false)
 }

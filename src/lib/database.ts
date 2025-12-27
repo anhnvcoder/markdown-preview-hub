@@ -157,9 +157,32 @@ const DEFAULT_SETTINGS: AppSettings = {
   pollingActiveInterval: 30000,  // 30s for active file
   directoryScanInterval: 60000,  // 60s for directory scan
   ignoredFolders: [
-    'node_modules', '.git', 'dist', 'build', '.next', '.nuxt',
-    '.astro', '.cache', '.temp', '__pycache__', '.idea', '.vscode'
+    // JavaScript/Node
+    'node_modules', '.npm', '.yarn', '.pnpm-store',
+    // Build outputs
+    'dist', 'build', 'out', 'target', 'bin', 'obj',
+    // Framework specific
+    '.next', '.nuxt', '.astro', '.svelte-kit', '.vercel', '.netlify',
+    // Python
+    '__pycache__', '.venv', 'venv', 'env', '.eggs', '*.egg-info',
+    // Ruby
+    'vendor', '.bundle',
+    // Rust
+    'target',
+    // Go
+    'vendor',
+    // Java/Kotlin
+    '.gradle', '.mvn',
+    // IDE/Editor
+    '.idea', '.vscode', '.vs', '*.swp',
+    // Version control
+    '.git', '.svn', '.hg',
+    // Cache/Temp
+    '.cache', '.temp', '.tmp', 'tmp', 'temp',
+    // Misc
+    'coverage', '.nyc_output', '.turbo', '.parcel-cache',
   ],
+  showToc: false,  // Default OFF - users enable if needed
 };
 
 export async function getSettings(): Promise<AppSettings> {

@@ -6,17 +6,36 @@ import { useState, useEffect } from 'preact/hooks';
 import { isSettingsOpen, closeSettings } from '../lib/keyboard';
 import { getSettings, saveSettings } from '../lib/database';
 import { updatePollingInterval } from '../lib/polling';
+import { showToc as showTocSignal } from '../stores/theme-store';
 import type { AppSettings } from '../types';
 
 const DEFAULT_IGNORED = [
-  'node_modules', '.git', 'dist', 'build', '.next', '.nuxt',
-  '.astro', '.cache', '.temp', '__pycache__', '.idea', '.vscode',
-  'vendor', 'venv', '.venv'
+  // JavaScript/Node
+  'node_modules', '.npm', '.yarn', '.pnpm-store',
+  // Build outputs
+  'dist', 'build', 'out', 'target', 'bin', 'obj',
+  // Framework specific
+  '.next', '.nuxt', '.astro', '.svelte-kit', '.vercel', '.netlify',
+  // Python
+  '__pycache__', '.venv', 'venv', 'env', '.eggs', '*.egg-info',
+  // Ruby
+  'vendor', '.bundle',
+  // Rust/Go
+  'target', 'vendor',
+  // Java/Kotlin
+  '.gradle', '.mvn',
+  // IDE/Editor
+  '.idea', '.vscode', '.vs', '*.swp',
+  // Version control
+  '.git', '.svn', '.hg',
+  // Cache/Temp
+  '.cache', '.temp', '.tmp', 'tmp', 'temp',
+  // Misc
+  'coverage', '.nyc_output', '.turbo', '.parcel-cache',
 ];
 
 // Polling interval options
 const INTERVAL_OPTIONS = [
-  { label: '15 seconds', value: 15000 },
   { label: '30 seconds', value: 30000 },
   { label: '1 minute', value: 60000 },
   { label: '2 minutes', value: 120000 },
@@ -80,17 +99,27 @@ export function SettingsModal() {
       pollingActiveInterval: 30000,
       directoryScanInterval: 60000,
       ignoredFolders: DEFAULT_IGNORED,
+      showToc: false,
     });
     setSettings({
       theme: 'dark',
       pollingActiveInterval: 30000,
       directoryScanInterval: 60000,
       ignoredFolders: DEFAULT_IGNORED,
+      showToc: false,
     });
     setIgnoredText(DEFAULT_IGNORED.join(', '));
     document.documentElement.className = 'dark';
     localStorage.setItem('md-preview-theme', 'dark');
     await updatePollingInterval(30000);
+    showTocSignal.value = false;
+  };
+
+  const handleTocToggle = async () => {
+    const newValue = !settings.showToc;
+    await saveSettings({ showToc: newValue });
+    setSettings({ ...settings, showToc: newValue });
+    showTocSignal.value = newValue;  // Update signal for reactive components
   };
 
   return (
@@ -125,6 +154,33 @@ export function SettingsModal() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Table of Contents */}
+          <div>
+            <label class="block text-sm font-medium mb-2">Table of Contents</label>
+            <div class="flex items-center gap-3">
+              <button
+                class={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  settings.showToc ? 'bg-primary' : 'bg-muted'
+                }`}
+                onClick={handleTocToggle}
+                role="switch"
+                aria-checked={settings.showToc}
+              >
+                <span
+                  class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    settings.showToc ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span class="text-sm text-muted-foreground">
+                {settings.showToc ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <p class="text-xs text-muted-foreground mt-2">
+              Show floating table of contents for markdown documents
+            </p>
           </div>
 
           {/* Polling Interval */}

@@ -225,7 +225,7 @@ export function Sidebar() {
         </div>
         <div class="flex items-center gap-1">
           {/* Refresh button */}
-          <button
+          {/* <button
             class={`btn-icon p-1 ${syncing ? 'animate-spin' : ''}`}
             onClick={handleRefresh}
             aria-label="Refresh files"
@@ -233,7 +233,7 @@ export function Sidebar() {
             title="Sync with local folder"
           >
             <div class="i-lucide-refresh-cw w-4 h-4" />
-          </button>
+          </button> */}
 
           {/* Add menu */}
           <div class="relative">

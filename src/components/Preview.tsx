@@ -3,7 +3,7 @@
  * Markdown preview with breadcrumb navigation and edit mode
  */
 import { activeFile, activeFileContent, activeFileId, currentProject, updateFileInState, permissionLost, openFolder } from '../stores/file-store';
-import { currentTheme } from '../stores/theme-store';
+import { currentTheme, showToc } from '../stores/theme-store';
 import { MarkdownPreview } from './MarkdownPreview';
 import { Editor } from './Editor';
 import { EmptyState } from './EmptyState';
@@ -152,7 +152,7 @@ export function Preview() {
         {mode === 'preview' ? (
           <div class="flex-1 overflow-y-auto pl-2 pr-2 py-4 scrollbar-hide">
             <div class="max-w-5xl mx-auto border border-border rounded-lg p-6">
-              <MarkdownPreview content={content} theme={currentTheme.value} />
+              <MarkdownPreview content={content} theme={currentTheme.value} showToc={showToc.value} />
             </div>
           </div>
         ) : (

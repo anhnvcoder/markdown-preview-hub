@@ -1,7 +1,12 @@
 /**
  * File sync status types
  */
-export type FileStatus = 'synced' | 'modified' | 'conflict' | 'web-only' | 'disk-changed';
+export type FileStatus =
+  | 'synced'
+  | 'modified'
+  | 'conflict'
+  | 'web-only'
+  | 'disk-changed';
 
 /**
  * Virtual file representation in IndexedDB
@@ -44,8 +49,8 @@ export interface Project {
  */
 export interface AppSettings {
   theme: 'dark' | 'light' | 'system';
-  pollingActiveInterval: number;  // ms - for active file sync (default 30000)
-  directoryScanInterval: number;  // ms - for new file detection (default 60000)
+  pollingActiveInterval: number; // ms - for active file sync (default 30000)
+  directoryScanInterval: number; // ms - for new file detection (default 60000)
   ignoredFolders: string[];
-  showToc: boolean;  // Show Table of Contents panel (default false)
+  showToc: boolean; // Show Table of Contents panel (default false)
 }

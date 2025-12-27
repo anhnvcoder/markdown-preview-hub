@@ -6,15 +6,21 @@
  * - Focus sync: sync when tab regains focus
  */
 import { signal } from '@preact/signals';
-import type { VirtualFile, Project } from '../types';
+import type { Project, VirtualFile } from '../types';
 import {
-  getFile,
-  updateFile,
   getAllFiles,
-  saveFiles,
+  getFile,
   getSettings,
+  saveFiles,
+  updateFile,
 } from './database';
-import { readFileContent, getFileMetadata, scanDirectory, hasFilePermission, verifyPermission } from './file-system';
+import {
+  getFileMetadata,
+  hasFilePermission,
+  readFileContent,
+  scanDirectory,
+  verifyPermission,
+} from './file-system';
 
 // Default polling interval (30s for active file)
 const DEFAULT_ACTIVE_INTERVAL = 30000;
@@ -191,7 +197,9 @@ async function pollForNewFiles(): Promise<void> {
   // Check directory permission first (query only, no prompt)
   try {
     // @ts-ignore
-    const permission = await currentProjectRef.dirHandle.queryPermission({ mode: 'read' });
+    const permission = await currentProjectRef.dirHandle.queryPermission({
+      mode: 'read',
+    });
     if (permission !== 'granted') {
       // Permission lost - skip scanning silently
       return;
@@ -395,7 +403,9 @@ export async function fullRescanFromDisk(): Promise<boolean | 'need-reopen'> {
     await onRefreshFiles?.();
     lastSyncTime.value = Date.now();
 
-    console.log(`[Poller] Full rescan complete: ${diskFiles.length} disk files, ${webOnlyFiles.length} web-only files`);
+    console.log(
+      `[Poller] Full rescan complete: ${diskFiles.length} disk files, ${webOnlyFiles.length} web-only files`
+    );
     return true;
   } catch (err) {
     console.error('[Poller] Full rescan error:', err);
@@ -439,7 +449,9 @@ async function resolveFolderHandle(
  * Supports multiple root folders - only affects the synced folder, leaves others untouched
  * Returns: { success: true } | { success: false, needReopen?: string }
  */
-export async function syncFolderFromDisk(folderId: string): Promise<{ success: boolean; needReopen?: string }> {
+export async function syncFolderFromDisk(
+  folderId: string
+): Promise<{ success: boolean; needReopen?: string }> {
   const file = await getFile(folderId);
   if (!file || file.type !== 'folder') return { success: false };
 
@@ -449,7 +461,9 @@ export async function syncFolderFromDisk(folderId: string): Promise<{ success: b
 
   // Get all existing files to find root folder's dirHandle
   const existingFiles = await getAllFiles();
-  const rootFolder = existingFiles.find((f) => f.path === rootName && f.type === 'folder');
+  const rootFolder = existingFiles.find(
+    (f) => f.path === rootName && f.type === 'folder'
+  );
 
   // Check if we have a valid dirHandle for this root folder
   let rootDirHandle = rootFolder?.dirHandle;
@@ -460,7 +474,9 @@ export async function syncFolderFromDisk(folderId: string): Promise<{ success: b
   }
 
   if (!rootDirHandle) {
-    console.warn(`[Poller] No dirHandle for root folder "${rootName}" - need to reopen`);
+    console.warn(
+      `[Poller] No dirHandle for root folder "${rootName}" - need to reopen`
+    );
     return { success: false, needReopen: rootName };
   }
 
@@ -506,12 +522,15 @@ export async function syncFolderFromDisk(folderId: string): Promise<{ success: b
     // Files inside this folder (to be replaced)
     // For subfolder sync: file.path is already full path like "root/subfolder"
     const folderPrefix = file.path + '/';
-    const filesInFolder = existingFiles.filter((f) =>
-      f.path.startsWith(folderPrefix) || (isRootFolder && f.path === rootName)
+    const filesInFolder = existingFiles.filter(
+      (f) =>
+        f.path.startsWith(folderPrefix) || (isRootFolder && f.path === rootName)
     );
 
     // Keep web-only files in this folder
-    const webOnlyInFolder = filesInFolder.filter((f) => f.isWebOnly && f.id !== folderId);
+    const webOnlyInFolder = filesInFolder.filter(
+      (f) => f.isWebOnly && f.id !== folderId
+    );
 
     // Files OUTSIDE this root folder (other root folders - keep as-is!)
     const filesFromOtherRoots = existingFiles.filter(
@@ -522,9 +541,10 @@ export async function syncFolderFromDisk(folderId: string): Promise<{ success: b
     const filesInSameRootButOutside = isRootFolder
       ? []
       : existingFiles.filter(
-          (f) => (f.path === rootName || f.path.startsWith(rootName + '/')) &&
-                 !f.path.startsWith(folderPrefix) &&
-                 f.id !== folderId
+          (f) =>
+            (f.path === rootName || f.path.startsWith(rootName + '/')) &&
+            !f.path.startsWith(folderPrefix) &&
+            f.id !== folderId
         );
 
     // Update folder entry itself with resolved handle
@@ -537,10 +557,12 @@ export async function syncFolderFromDisk(folderId: string): Promise<{ success: b
     };
 
     // For root folder sync, also create/update the root folder entry
-    const rootFolderEntry = isRootFolder ? {
-      ...updatedFolder,
-      dirHandle: rootDirHandle,
-    } : null;
+    const rootFolderEntry = isRootFolder
+      ? {
+          ...updatedFolder,
+          dirHandle: rootDirHandle,
+        }
+      : null;
 
     // Merge all - keep other roots untouched!
     const allFiles = [
@@ -561,7 +583,9 @@ export async function syncFolderFromDisk(folderId: string): Promise<{ success: b
       diskFilesCount: diskFiles.length,
       webOnlyInFolderCount: webOnlyInFolder.length,
       allFilesCount: allFiles.length,
-      filesFromOtherRootsPaths: filesFromOtherRoots.map(f => f.path).slice(0, 10),
+      filesFromOtherRootsPaths: filesFromOtherRoots
+        .map((f) => f.path)
+        .slice(0, 10),
     });
 
     // Clear and save

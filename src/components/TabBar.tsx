@@ -2,12 +2,12 @@
  * TabBar component
  * Horizontal tab bar for open files with close buttons and dirty indicators
  */
-import { useRef, useState, useEffect } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
-  openTabFiles,
   activeFileId,
-  selectFile,
   closeTab,
+  openTabFiles,
+  selectFile,
 } from '../stores/file-store';
 
 export function TabBar() {
@@ -39,16 +39,16 @@ export function TabBar() {
   if (tabs.length === 0) return null;
 
   return (
-    <div class="h-9 border-b border-border/50 bg-card/30 flex items-center relative">
+    <div class='h-9 border-b border-border/50 bg-card/30 flex items-center relative'>
       {/* Left fade indicator */}
       {showLeftFade && (
-        <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card/80 to-transparent z-10 pointer-events-none" />
+        <div class='absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card/80 to-transparent z-10 pointer-events-none' />
       )}
 
       {/* Tabs container */}
       <div
         ref={scrollRef}
-        class="flex items-center overflow-x-auto scrollbar-hide h-full flex-1"
+        class='flex items-center overflow-x-auto scrollbar-hide h-full flex-1'
       >
         {tabs.map((file) => {
           const isActive = file.id === activeId;
@@ -66,11 +66,14 @@ export function TabBar() {
             >
               {/* Dirty indicator */}
               {isDirty && (
-                <span class="w-2 h-2 rounded-full bg-warning shrink-0" title="Unsaved changes" />
+                <span
+                  class='w-2 h-2 rounded-full bg-warning shrink-0'
+                  title='Unsaved changes'
+                />
               )}
 
               {/* File name */}
-              <span class="text-xs truncate max-w-32">{file.virtualName}</span>
+              <span class='text-xs truncate max-w-32'>{file.virtualName}</span>
 
               {/* Close button - always visible on active, hover on others */}
               <button
@@ -81,9 +84,9 @@ export function TabBar() {
                   e.stopPropagation();
                   closeTab(file.id);
                 }}
-                title="Close tab (⌘W)"
+                title='Close tab (⌘W)'
               >
-                <div class="i-lucide-x w-3 h-3" />
+                <div class='i-lucide-x w-3 h-3' />
               </button>
             </div>
           );
@@ -92,8 +95,8 @@ export function TabBar() {
 
       {/* Right fade indicator with count */}
       {showRightFade && (
-        <div class="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-card/90 to-transparent z-10 flex items-center justify-end pr-2 pointer-events-none">
-          <span class="text-[10px] text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded-full">
+        <div class='absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-card/90 to-transparent z-10 flex items-center justify-end pr-2 pointer-events-none'>
+          <span class='text-[10px] text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded-full'>
             {tabs.length}
           </span>
         </div>

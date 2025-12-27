@@ -2,23 +2,37 @@
  * App component
  * Main Preact island that wires all components together
  */
-import { useEffect, useRef } from 'preact/hooks';
 import { signal } from '@preact/signals';
-import { Header } from './Header';
-import { Sidebar } from './Sidebar';
-import { Preview } from './Preview';
-import { StatusBar } from './StatusBar';
-import { ConflictModal } from './ConflictModal';
-import { SettingsModal } from './SettingsModal';
-import { UploadWarningModal } from './UploadWarningModal';
-import { TabBar } from './TabBar';
-import { CommandPalette } from './CommandPalette';
-import { startPolling, stopPolling, setActiveFile, setProjectRef } from '../lib/polling';
-import { initKeyboardShortcuts } from '../lib/keyboard';
-import { activeFileId, activeFile, refreshFiles, selectFile, currentProject, loadPersistedProject, openFolder, closeActiveTab } from '../stores/file-store';
-import { initTheme } from '../stores/theme-store';
-import { saveToDisk } from '../lib/virtual-fs';
+import { useEffect, useRef } from 'preact/hooks';
 import { getSettings } from '../lib/database';
+import { initKeyboardShortcuts } from '../lib/keyboard';
+import {
+  setActiveFile,
+  setProjectRef,
+  startPolling,
+  stopPolling,
+} from '../lib/polling';
+import { saveToDisk } from '../lib/virtual-fs';
+import {
+  activeFile,
+  activeFileId,
+  closeActiveTab,
+  currentProject,
+  loadPersistedProject,
+  openFolder,
+  refreshFiles,
+  selectFile,
+} from '../stores/file-store';
+import { initTheme } from '../stores/theme-store';
+import { CommandPalette } from './CommandPalette';
+import { ConflictModal } from './ConflictModal';
+import { Header } from './Header';
+import { Preview } from './Preview';
+import { SettingsModal } from './SettingsModal';
+import { Sidebar } from './Sidebar';
+import { StatusBar } from './StatusBar';
+import { TabBar } from './TabBar';
+import { UploadWarningModal } from './UploadWarningModal';
 
 // View mode signal for keyboard shortcut
 export const viewMode = signal<'preview' | 'edit'>('preview');
@@ -32,7 +46,11 @@ const MIN_SIDEBAR_WIDTH = 180;
 const MAX_SIDEBAR_WIDTH = 500;
 export const sidebarWidth = signal<number>(
   typeof localStorage !== 'undefined'
-    ? parseInt(localStorage.getItem('md-preview-sidebar-width') || String(DEFAULT_SIDEBAR_WIDTH), 10)
+    ? parseInt(
+        localStorage.getItem('md-preview-sidebar-width') ||
+          String(DEFAULT_SIDEBAR_WIDTH),
+        10
+      )
     : DEFAULT_SIDEBAR_WIDTH
 );
 
@@ -82,7 +100,10 @@ export function App() {
   useEffect(() => {
     const handleResizeMove = (e: MouseEvent) => {
       if (!isResizingRef.current) return;
-      const newWidth = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, e.clientX));
+      const newWidth = Math.min(
+        MAX_SIDEBAR_WIDTH,
+        Math.max(MIN_SIDEBAR_WIDTH, e.clientX)
+      );
       sidebarWidth.value = newWidth;
     };
 
@@ -93,7 +114,10 @@ export function App() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       // Persist to localStorage
-      localStorage.setItem('md-preview-sidebar-width', String(sidebarWidth.value));
+      localStorage.setItem(
+        'md-preview-sidebar-width',
+        String(sidebarWidth.value)
+      );
     };
 
     document.addEventListener('mousemove', handleResizeMove);
@@ -168,9 +192,13 @@ export function App() {
   return (
     <>
       <Header />
-      <div class="flex-1 flex overflow-hidden">
+      <div class='flex-1 flex overflow-hidden'>
         <div
-          class={isCollapsed ? 'sidebar-container sidebar-collapsed' : 'sidebar-container'}
+          class={
+            isCollapsed
+              ? 'sidebar-container sidebar-collapsed'
+              : 'sidebar-container'
+          }
           style={{ width: isCollapsed ? 0 : `${currentWidth}px` }}
         >
           <Sidebar />
@@ -178,13 +206,13 @@ export function App() {
           {!isCollapsed && (
             <div
               ref={resizeHandleRef}
-              class="sidebar-resize-handle"
+              class='sidebar-resize-handle'
               onMouseDown={handleResizeStart}
             />
           )}
         </div>
         {/* Main content with tab bar */}
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class='flex-1 flex flex-col min-w-0'>
           <TabBar />
           <Preview />
         </div>

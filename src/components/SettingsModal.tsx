@@ -2,36 +2,69 @@
  * SettingsModal component
  * Theme selection, ignored folders, polling intervals
  */
-import { useState, useEffect } from 'preact/hooks';
-import { isSettingsOpen, closeSettings } from '../lib/keyboard';
+import { useEffect, useState } from 'preact/hooks';
 import { getSettings, saveSettings } from '../lib/database';
+import { closeSettings, isSettingsOpen } from '../lib/keyboard';
 import { updatePollingInterval } from '../lib/polling';
 import { showToc as showTocSignal } from '../stores/theme-store';
 import type { AppSettings } from '../types';
 
 const DEFAULT_IGNORED = [
   // JavaScript/Node
-  'node_modules', '.npm', '.yarn', '.pnpm-store',
+  'node_modules',
+  '.npm',
+  '.yarn',
+  '.pnpm-store',
   // Build outputs
-  'dist', 'build', 'out', 'target', 'bin', 'obj',
+  'dist',
+  'build',
+  'out',
+  'target',
+  'bin',
+  'obj',
   // Framework specific
-  '.next', '.nuxt', '.astro', '.svelte-kit', '.vercel', '.netlify',
+  '.next',
+  '.nuxt',
+  '.astro',
+  '.svelte-kit',
+  '.vercel',
+  '.netlify',
   // Python
-  '__pycache__', '.venv', 'venv', 'env', '.eggs', '*.egg-info',
+  '__pycache__',
+  '.venv',
+  'venv',
+  'env',
+  '.eggs',
+  '*.egg-info',
   // Ruby
-  'vendor', '.bundle',
+  'vendor',
+  '.bundle',
   // Rust/Go
-  'target', 'vendor',
+  'target',
+  'vendor',
   // Java/Kotlin
-  '.gradle', '.mvn',
+  '.gradle',
+  '.mvn',
   // IDE/Editor
-  '.idea', '.vscode', '.vs', '*.swp',
+  '.idea',
+  '.vscode',
+  '.vs',
+  '*.swp',
   // Version control
-  '.git', '.svn', '.hg',
+  '.git',
+  '.svn',
+  '.hg',
   // Cache/Temp
-  '.cache', '.temp', '.tmp', 'tmp', 'temp',
+  '.cache',
+  '.temp',
+  '.tmp',
+  'tmp',
+  'temp',
   // Misc
-  'coverage', '.nyc_output', '.turbo', '.parcel-cache',
+  'coverage',
+  '.nyc_output',
+  '.turbo',
+  '.parcel-cache',
 ];
 
 // Polling interval options
@@ -50,7 +83,7 @@ export function SettingsModal() {
   // Load settings on open
   useEffect(() => {
     if (isOpen) {
-      getSettings().then(s => {
+      getSettings().then((s) => {
         setSettings(s);
         setIgnoredText(s.ignoredFolders.join(', '));
       });
@@ -66,7 +99,9 @@ export function SettingsModal() {
     // Apply theme - set className directly (not toggle)
     let appliedTheme = theme;
     if (theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches;
       appliedTheme = prefersDark ? 'dark' : 'light';
     }
 
@@ -86,7 +121,10 @@ export function SettingsModal() {
 
   // Auto-save ignored folders on blur
   const handleIgnoredBlur = async () => {
-    const folders = ignoredText.split(',').map(s => s.trim()).filter(Boolean);
+    const folders = ignoredText
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     if (folders.length > 0) {
       await saveSettings({ ignoredFolders: folders });
       setSettings({ ...settings, ignoredFolders: folders });
@@ -119,30 +157,30 @@ export function SettingsModal() {
     const newValue = !settings.showToc;
     await saveSettings({ showToc: newValue });
     setSettings({ ...settings, showToc: newValue });
-    showTocSignal.value = newValue;  // Update signal for reactive components
+    showTocSignal.value = newValue; // Update signal for reactive components
   };
 
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div class="bg-card border border-border rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+    <div class='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm'>
+      <div class='bg-card border border-border rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col'>
         {/* Header */}
-        <div class="flex items-center justify-between p-4 border-b border-border">
-          <div class="flex items-center gap-2">
-            <div class="i-lucide-settings w-5 h-5" />
-            <h2 class="font-semibold">Settings</h2>
+        <div class='flex items-center justify-between p-4 border-b border-border'>
+          <div class='flex items-center gap-2'>
+            <div class='i-lucide-settings w-5 h-5' />
+            <h2 class='font-semibold'>Settings</h2>
           </div>
-          <button class="btn-icon" onClick={closeSettings} aria-label="Close">
-            <div class="i-lucide-x w-4 h-4" />
+          <button class='btn-icon' onClick={closeSettings} aria-label='Close'>
+            <div class='i-lucide-x w-4 h-4' />
           </button>
         </div>
 
         {/* Content */}
-        <div class="flex-1 overflow-y-auto p-4 space-y-6">
+        <div class='flex-1 overflow-y-auto p-4 space-y-6'>
           {/* Theme */}
           <div>
-            <label class="block text-sm font-medium mb-2">Theme</label>
-            <div class="flex gap-2">
-              {(['dark', 'light', 'system'] as const).map(t => (
+            <label class='block text-sm font-medium mb-2'>Theme</label>
+            <div class='flex gap-2'>
+              {(['dark', 'light', 'system'] as const).map((t) => (
                 <button
                   key={t}
                   class={`px-4 py-2 rounded text-sm ${
@@ -158,14 +196,16 @@ export function SettingsModal() {
 
           {/* Table of Contents */}
           <div>
-            <label class="block text-sm font-medium mb-2">Table of Contents</label>
-            <div class="flex items-center gap-3">
+            <label class='block text-sm font-medium mb-2'>
+              Table of Contents
+            </label>
+            <div class='flex items-center gap-3'>
               <button
                 class={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                   settings.showToc ? 'bg-primary' : 'bg-muted'
                 }`}
                 onClick={handleTocToggle}
-                role="switch"
+                role='switch'
                 aria-checked={settings.showToc}
               >
                 <span
@@ -174,23 +214,25 @@ export function SettingsModal() {
                   }`}
                 />
               </button>
-              <span class="text-sm text-muted-foreground">
+              <span class='text-sm text-muted-foreground'>
                 {settings.showToc ? 'Enabled' : 'Disabled'}
               </span>
             </div>
-            <p class="text-xs text-muted-foreground mt-2">
+            <p class='text-xs text-muted-foreground mt-2'>
               Show floating table of contents for markdown documents
             </p>
           </div>
 
           {/* Polling Interval */}
           <div>
-            <label class="block text-sm font-medium mb-2">Sync Interval (Active File)</label>
-            <p class="text-xs text-muted-foreground mb-3">
+            <label class='block text-sm font-medium mb-2'>
+              Sync Interval (Active File)
+            </label>
+            <p class='text-xs text-muted-foreground mb-3'>
               How often to check for changes in the currently open file
             </p>
-            <div class="flex flex-wrap gap-2">
-              {INTERVAL_OPTIONS.map(opt => (
+            <div class='flex flex-wrap gap-2'>
+              {INTERVAL_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   class={`px-3 py-1.5 rounded text-sm ${
@@ -204,33 +246,38 @@ export function SettingsModal() {
                 </button>
               ))}
             </div>
-            <p class="text-xs text-muted-foreground mt-2">
+            <p class='text-xs text-muted-foreground mt-2'>
               Directory scan: every 60s | Tab focus: instant sync
             </p>
           </div>
 
           {/* Ignored folders */}
           <div>
-            <label class="block text-sm font-medium mb-2">Ignored Folders</label>
+            <label class='block text-sm font-medium mb-2'>
+              Ignored Folders
+            </label>
             <textarea
-              class="w-full h-24 p-2 bg-muted rounded text-sm resize-none"
+              class='w-full h-24 p-2 bg-muted rounded text-sm resize-none'
               value={ignoredText}
               onInput={handleIgnoredChange}
               onBlur={handleIgnoredBlur}
-              placeholder="node_modules, .git, dist..."
+              placeholder='node_modules, .git, dist...'
             />
-            <p class="text-xs text-muted-foreground mt-2">
+            <p class='text-xs text-muted-foreground mt-2'>
               Comma-separated list. Changes save automatically.
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div class="flex items-center justify-between p-4 border-t border-border">
-          <button class="btn-ghost text-xs text-destructive" onClick={handleReset}>
+        <div class='flex items-center justify-between p-4 border-t border-border'>
+          <button
+            class='btn-ghost text-xs text-destructive'
+            onClick={handleReset}
+          >
             Reset to Defaults
           </button>
-          <button class="btn-primary" onClick={closeSettings}>
+          <button class='btn-primary' onClick={closeSettings}>
             Done
           </button>
         </div>

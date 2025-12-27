@@ -2,30 +2,35 @@
  * FileItem component
  * Recursive tree node for files and folders with hover actions
  */
-import { useState, useRef, useEffect } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { saveFile } from '../lib/database';
+import { syncFolderFromDisk } from '../lib/polling';
 import {
-  activeFileId,
+  getContent,
+  hideOrDeleteFile,
+  renameFile,
+  saveToDisk,
+  syncFromDisk,
+} from '../lib/virtual-fs';
+import {
   activeFileContent,
-  selectedNodeId,
+  activeFileId,
+  closeTab,
+  createFile,
+  createFolder,
+  errorMessage,
   expandedFolders,
   files,
+  openFolder,
+  refreshFiles,
+  selectedNodeId,
   selectFile,
   selectNode,
   toggleFolder,
-  createFile,
-  createFolder,
-  refreshFiles,
-  closeTab,
-  openFolder,
-  errorMessage,
-  currentProject,
 } from '../stores/file-store';
+import type { VirtualFile } from '../types';
 import { inlineCreating } from './Sidebar';
 import { StatusIcon } from './StatusIcon';
-import { renameFile, hideOrDeleteFile, saveToDisk, syncFromDisk, getContent } from '../lib/virtual-fs';
-import { syncFolderFromDisk } from '../lib/polling';
-import { saveFile } from '../lib/database';
-import type { VirtualFile } from '../types';
 
 interface TreeNode extends VirtualFile {
   children: TreeNode[];
@@ -39,7 +44,13 @@ interface FileItemProps {
 /**
  * Inline create input - shown inside folder when creating
  */
-function InlineCreateInput({ parentPath, depth }: { parentPath: string; depth: number }) {
+function InlineCreateInput({
+  parentPath,
+  depth,
+}: {
+  parentPath: string;
+  depth: number;
+}) {
   const [newName, setNewName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +72,8 @@ function InlineCreateInput({ parentPath, depth }: { parentPath: string; depth: n
     // Validate file extension
     if (creating.type === 'file') {
       const trimmedName = newName.trim();
-      const hasExtension = trimmedName.includes('.') && !trimmedName.startsWith('.');
+      const hasExtension =
+        trimmedName.includes('.') && !trimmedName.startsWith('.');
       if (hasExtension && !trimmedName.toLowerCase().endsWith('.md')) {
         errorMessage.value = 'Only .md files are allowed';
         return;
@@ -70,9 +82,12 @@ function InlineCreateInput({ parentPath, depth }: { parentPath: string; depth: n
 
     setIsSubmitting(true);
     try {
-      const name = creating.type === 'file'
-        ? (newName.endsWith('.md') ? newName : newName + '.md')
-        : newName;
+      const name =
+        creating.type === 'file'
+          ? newName.endsWith('.md')
+            ? newName
+            : newName + '.md'
+          : newName;
 
       let newId: string | null = null;
       if (creating.type === 'file') {
@@ -109,27 +124,32 @@ function InlineCreateInput({ parentPath, depth }: { parentPath: string; depth: n
 
   return (
     <div
-      class="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-muted/30 border border-primary/50 my-0.5"
+      class='flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-muted/30 border border-primary/50 my-0.5'
       style={{ marginLeft: paddingLeft }}
     >
       {/* Spacer for chevron */}
-      <div class="w-3.5 flex-shrink-0" />
+      <div class='w-3.5 flex-shrink-0' />
       {/* Icon */}
       {creating.type === 'folder' ? (
-        <div class="i-lucide-folder w-4 h-4 flex-shrink-0" style={{ color: 'var(--folder-icon)' }} />
+        <div
+          class='i-lucide-folder w-4 h-4 flex-shrink-0'
+          style={{ color: 'var(--folder-icon)' }}
+        />
       ) : (
-        <div class="i-lucide-file-text w-4 h-4 flex-shrink-0" />
+        <div class='i-lucide-file-text w-4 h-4 flex-shrink-0' />
       )}
       {/* Input */}
       <input
         ref={inputRef}
-        type="text"
+        type='text'
         value={newName}
         onInput={(e) => setNewName((e.target as HTMLInputElement).value)}
         onKeyDown={handleKeyDown}
         onBlur={() => setTimeout(handleCancel, 150)}
-        placeholder={creating.type === 'folder' ? 'Folder name...' : 'File name...'}
-        class="flex-1 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+        placeholder={
+          creating.type === 'folder' ? 'Folder name...' : 'File name...'
+        }
+        class='flex-1 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground'
       />
     </div>
   );
@@ -212,11 +232,18 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
       const content = await getContent(node.id);
       // Generate duplicate name
       const baseName = node.virtualName.replace(/\.md$/, '');
-      const parentPath = node.path.split('/').slice(0, -1).join('/') || undefined;
+      const parentPath =
+        node.path.split('/').slice(0, -1).join('/') || undefined;
       let duplicateName = `${baseName} (copy).md`;
       let counter = 1;
       // Check for existing duplicates
-      while (files.value.some(f => f.path === (parentPath ? `${parentPath}/${duplicateName}` : duplicateName))) {
+      while (
+        files.value.some(
+          (f) =>
+            f.path ===
+            (parentPath ? `${parentPath}/${duplicateName}` : duplicateName)
+        )
+      ) {
         counter++;
         duplicateName = `${baseName} (copy ${counter}).md`;
       }
@@ -224,7 +251,7 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
       const newId = await createFile(duplicateName, parentPath);
       if (newId) {
         // Update content
-        const newFile = files.value.find(f => f.id === newId);
+        const newFile = files.value.find((f) => f.id === newId);
         if (newFile) {
           newFile.contentOverride = content;
           await saveFile(newFile);
@@ -303,7 +330,9 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
           await openFolder();
         }
       } else if (!result.success) {
-        alert('Failed to sync folder. The folder may have been moved or renamed.');
+        alert(
+          'Failed to sync folder. The folder may have been moved or renamed.'
+        );
       }
     } catch (err) {
       console.error('[FileItem] Sync folder from disk failed:', err);
@@ -314,71 +343,85 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
     <div>
       <div
         class={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer transition-colors relative ${
-          isSelected || isActive ? 'bg-[var(--sidebar-accent)] text-foreground' : 'hover:bg-[var(--sidebar-accent)] text-muted-foreground hover:text-foreground'
+          isSelected || isActive
+            ? 'bg-[var(--sidebar-accent)] text-foreground'
+            : 'hover:bg-[var(--sidebar-accent)] text-muted-foreground hover:text-foreground'
         }`}
         style={{ paddingLeft }}
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => { setIsHovered(false); setShowMenu(false); }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setShowMenu(false);
+        }}
       >
         {/* Active indicator bar - GitHub style */}
         {isActive && (
-          <div class="absolute left-0 top-1 bottom-1 w-0.5 bg-[var(--primary)] rounded-r" />
+          <div class='absolute left-0 top-1 bottom-1 w-0.5 bg-[var(--primary)] rounded-r' />
         )}
 
         {/* Folder chevron */}
         {isFolder ? (
-          <div class={`i-lucide-chevron-right w-3.5 h-3.5 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
+          <div
+            class={`i-lucide-chevron-right w-3.5 h-3.5 transition-transform flex-shrink-0 ${
+              isExpanded ? 'rotate-90' : ''
+            }`}
+          />
         ) : (
-          <div class="w-3.5 flex-shrink-0" />
+          <div class='w-3.5 flex-shrink-0' />
         )}
 
         {/* Icon - folder uses theme color, file is neutral */}
         {isFolder ? (
-          <div class="i-lucide-folder w-4 h-4 flex-shrink-0" style={{ color: 'var(--folder-icon)' }} />
+          <div
+            class='i-lucide-folder w-4 h-4 flex-shrink-0'
+            style={{ color: 'var(--folder-icon)' }}
+          />
         ) : (
-          <div class="i-lucide-file-text w-4 h-4 flex-shrink-0" />
+          <div class='i-lucide-file-text w-4 h-4 flex-shrink-0' />
         )}
 
         {/* Name or Rename Input */}
         {isRenaming ? (
           <input
             ref={renameInputRef}
-            type="text"
+            type='text'
             value={newName}
             onInput={(e) => setNewName((e.target as HTMLInputElement).value)}
             onKeyDown={handleRenameKeyDown}
             onBlur={() => setTimeout(handleRenameConfirm, 100)}
-            class="flex-1 text-sm bg-input border border-border rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-primary"
+            class='flex-1 text-sm bg-input border border-border rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-primary'
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <span class="flex-1 text-sm truncate">{node.virtualName}</span>
+          <span class='flex-1 text-sm truncate'>{node.virtualName}</span>
         )}
 
         {/* Status icon and actions */}
-        <div class="flex items-center gap-1 flex-shrink-0">
+        <div class='flex items-center gap-1 flex-shrink-0'>
           {/* Status icon - always visible for files, and for web-only folders */}
-          {(!isFolder || node.status === 'web-only') && <StatusIcon status={node.status} />}
+          {(!isFolder || node.status === 'web-only') && (
+            <StatusIcon status={node.status} />
+          )}
 
           {/* Hover action menu (for files and folders) */}
           <div class={`relative ${isHovered ? 'visible' : 'invisible'}`}>
             <button
-              class="p-0.5 rounded hover:bg-muted/80 transition-opacity"
+              class='p-0.5 rounded hover:bg-muted/80 transition-opacity'
               onClick={handleMenuClick}
               aria-label={isFolder ? 'Folder options' : 'File options'}
             >
-              <div class="i-lucide-more-vertical w-3.5 h-3.5" />
+              <div class='i-lucide-more-vertical w-3.5 h-3.5' />
             </button>
 
             {showMenu && (
-              <div class="absolute right-0 top-6 z-50 w-40 bg-popover border border-border/50 rounded-md shadow-lg py-1 backdrop-blur-xl">
+              <div class='absolute right-0 top-6 z-50 w-40 bg-popover border border-border/50 rounded-md shadow-lg py-1 backdrop-blur-xl'>
                 {/* Rename - for both files and folders */}
                 <button
-                  class="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                  class='w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2'
                   onClick={handleRename}
                 >
-                  <div class="i-lucide-pencil w-3 h-3" />
+                  <div class='i-lucide-pencil w-3 h-3' />
                   Rename
                 </button>
 
@@ -386,27 +429,27 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
                 {!isFolder && (
                   <>
                     <button
-                      class="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                      class='w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2'
                       onClick={handleDuplicate}
                     >
-                      <div class="i-lucide-copy w-3 h-3" />
+                      <div class='i-lucide-copy w-3 h-3' />
                       Duplicate
                     </button>
-                    <div class="h-px bg-border/50 my-1" />
+                    <div class='h-px bg-border/50 my-1' />
                     <button
-                      class="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                      class='w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2'
                       onClick={handleSaveToDisk}
                     >
-                      <div class="i-lucide-hard-drive w-3 h-3" />
+                      <div class='i-lucide-hard-drive w-3 h-3' />
                       Save to Disk
                     </button>
                     {/* Sync from Disk - only for disk files */}
                     {!node.isWebOnly && (
                       <button
-                        class="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                        class='w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2'
                         onClick={handleSyncFromDisk}
                       >
-                        <div class="i-lucide-refresh-cw w-3 h-3" />
+                        <div class='i-lucide-refresh-cw w-3 h-3' />
                         Sync from Disk
                       </button>
                     )}
@@ -416,25 +459,25 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
                 {/* Folder-only options */}
                 {isFolder && !node.isWebOnly && (
                   <>
-                    <div class="h-px bg-border/50 my-1" />
+                    <div class='h-px bg-border/50 my-1' />
                     <button
-                      class="w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                      class='w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2'
                       onClick={handleSyncFolderFromDisk}
                     >
-                      <div class="i-lucide-refresh-cw w-3 h-3" />
+                      <div class='i-lucide-refresh-cw w-3 h-3' />
                       Sync from Disk
                     </button>
                   </>
                 )}
 
-                <div class="h-px bg-border/50 my-1" />
+                <div class='h-px bg-border/50 my-1' />
 
                 {/* Delete/Hide option */}
                 <button
-                  class="w-full px-3 py-1.5 text-left text-sm text-destructive hover:bg-muted/50 transition-colors flex items-center gap-2"
+                  class='w-full px-3 py-1.5 text-left text-sm text-destructive hover:bg-muted/50 transition-colors flex items-center gap-2'
                   onClick={handleDelete}
                 >
-                  <div class="i-lucide-trash-2 w-3 h-3" />
+                  <div class='i-lucide-trash-2 w-3 h-3' />
                   {node.isWebOnly ? 'Delete' : 'Hide'}
                 </button>
               </div>

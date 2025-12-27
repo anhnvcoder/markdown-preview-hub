@@ -12,7 +12,9 @@ export const isSettingsOpen = signal(false);
 /**
  * Detect if user is on macOS
  */
-export const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+export const isMac =
+  typeof navigator !== 'undefined' &&
+  /Mac|iPhone|iPad|iPod/.test(navigator.platform);
 
 /**
  * Get modifier key symbol based on OS (⌘ for Mac, Ctrl for others)

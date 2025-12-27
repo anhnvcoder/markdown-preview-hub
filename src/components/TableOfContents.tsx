@@ -4,8 +4,8 @@
  * Desktop: Fixed panel on right side
  * Mobile: FAB button + drawer from bottom
  */
-import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { RefObject } from 'preact';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { TocHeading } from '../lib/markdown';
 
 interface TableOfContentsProps {
@@ -13,7 +13,10 @@ interface TableOfContentsProps {
   containerRef: RefObject<HTMLDivElement>;
 }
 
-export function TableOfContents({ headings, containerRef }: TableOfContentsProps) {
+export function TableOfContents({
+  headings,
+  containerRef,
+}: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -74,17 +77,14 @@ export function TableOfContents({ headings, containerRef }: TableOfContentsProps
 
   // Render TOC list (shared between desktop and mobile)
   const renderTocList = () => (
-    <ul class="toc-list">
+    <ul class='toc-list'>
       {headings.map((heading) => (
         <li
           key={heading.id}
           class={`toc-item ${activeId === heading.id ? 'toc-active' : ''}`}
           style={{ paddingLeft: `${(heading.level - minLevel) * 12 + 12}px` }}
         >
-          <button
-            class="toc-link"
-            onClick={() => handleClick(heading.id)}
-          >
+          <button class='toc-link' onClick={() => handleClick(heading.id)}>
             {heading.text}
           </button>
         </li>
@@ -97,17 +97,21 @@ export function TableOfContents({ headings, containerRef }: TableOfContentsProps
       {/* Desktop TOC - hidden on mobile */}
       <nav
         class={`toc-panel toc-desktop ${isCollapsed ? 'toc-collapsed' : ''}`}
-        aria-label="Table of contents"
+        aria-label='Table of contents'
       >
         {/* Header - title left, icon right */}
-        <div class="toc-header">
-          <span class="toc-title">Contents</span>
+        <div class='toc-header'>
+          <span class='toc-title'>Contents</span>
           <button
-            class="toc-toggle"
+            class='toc-toggle'
             onClick={() => setIsCollapsed(!isCollapsed)}
             aria-label={isCollapsed ? 'Expand TOC' : 'Collapse TOC'}
           >
-            <div class={`i-lucide-chevron-${isCollapsed ? 'right' : 'down'} w-4 h-4`} />
+            <div
+              class={`i-lucide-chevron-${
+                isCollapsed ? 'right' : 'down'
+              } w-4 h-4`}
+            />
           </button>
         </div>
 
@@ -117,29 +121,29 @@ export function TableOfContents({ headings, containerRef }: TableOfContentsProps
 
       {/* Mobile FAB - shown only on mobile */}
       <button
-        class="toc-fab"
+        class='toc-fab'
         onClick={() => setIsMobileOpen(true)}
-        aria-label="Open table of contents"
+        aria-label='Open table of contents'
       >
-        <div class="i-lucide-list w-5 h-5" />
+        <div class='i-lucide-list w-5 h-5' />
       </button>
 
       {/* Mobile Drawer */}
       {isMobileOpen && (
-        <div class="toc-drawer-overlay" onClick={() => setIsMobileOpen(false)}>
+        <div class='toc-drawer-overlay' onClick={() => setIsMobileOpen(false)}>
           <nav
-            class="toc-drawer"
+            class='toc-drawer'
             onClick={(e) => e.stopPropagation()}
-            aria-label="Table of contents"
+            aria-label='Table of contents'
           >
-            <div class="toc-drawer-header">
-              <span class="toc-title">Contents</span>
+            <div class='toc-drawer-header'>
+              <span class='toc-title'>Contents</span>
               <button
-                class="toc-toggle"
+                class='toc-toggle'
                 onClick={() => setIsMobileOpen(false)}
-                aria-label="Close"
+                aria-label='Close'
               >
-                <div class="i-lucide-x w-4 h-4" />
+                <div class='i-lucide-x w-4 h-4' />
               </button>
             </div>
             {renderTocList()}

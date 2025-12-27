@@ -2,24 +2,23 @@
  * File store using @preact/signals
  * Reactive state management for files and UI
  */
-import { signal, computed } from '@preact/signals';
-import type { VirtualFile, Project } from '../types';
+import { computed, signal } from '@preact/signals';
 import {
-  saveProject,
-  getAllFiles,
-  saveFiles,
   clearAllFiles,
-  getFile,
+  getAllFiles,
   getAllProjects,
   saveFile,
+  saveFiles,
+  saveProject,
 } from '../lib/database';
 import {
   openDirectory,
+  openFilePicker,
   scanDirectory,
   verifyPermission,
-  openFilePicker,
 } from '../lib/file-system';
 import { getContent } from '../lib/virtual-fs';
+import type { Project, VirtualFile } from '../types';
 
 // ============ State ============
 
@@ -201,7 +200,9 @@ function expandParentFolders(filePath: string): void {
   for (const part of pathParts) {
     currentPath = currentPath ? `${currentPath}/${part}` : part;
     // Find folder by path and add its ID to expanded set
-    const folder = files.value.find((f) => f.path === currentPath && f.type === 'folder');
+    const folder = files.value.find(
+      (f) => f.path === currentPath && f.type === 'folder'
+    );
     if (folder) {
       foldersToExpand.add(folder.id);
     }
@@ -358,7 +359,9 @@ export async function loadPersistedProject(): Promise<void> {
         try {
           const tabIds = JSON.parse(savedTabs) as string[];
           // Filter to only include tabs that still exist in files
-          const validTabs = tabIds.filter((id) => allFiles.some((f) => f.id === id && f.type === 'file'));
+          const validTabs = tabIds.filter((id) =>
+            allFiles.some((f) => f.id === id && f.type === 'file')
+          );
           openTabs.value = validTabs;
 
           // Restore active file if it's in the valid tabs

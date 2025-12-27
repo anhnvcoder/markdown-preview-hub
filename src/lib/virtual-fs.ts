@@ -2,10 +2,20 @@
  * Virtual File System operations
  * Overlay layer for web-only CRUD without touching disk
  */
-import type { VirtualFile, FileStatus } from '../types';
-import { getFile, saveFile, updateFile, deleteFile as dbDeleteFile, getAllFiles } from './database';
-import { readFileContent, writeFileContent, hasFilePermission } from './file-system';
 import { permissionLost } from '../stores/file-store';
+import type { FileStatus, VirtualFile } from '../types';
+import {
+  deleteFile as dbDeleteFile,
+  getAllFiles,
+  getFile,
+  saveFile,
+  updateFile,
+} from './database';
+import {
+  hasFilePermission,
+  readFileContent,
+  writeFileContent,
+} from './file-system';
 
 /**
  * Create a new web-only file
@@ -80,7 +90,10 @@ export async function createFolder(
 /**
  * Rename a file (virtual name only, doesn't touch disk)
  */
-export async function renameFile(fileId: string, newName: string): Promise<void> {
+export async function renameFile(
+  fileId: string,
+  newName: string
+): Promise<void> {
   const file = await getFile(fileId);
   if (!file) throw new Error('File not found');
 
@@ -108,7 +121,10 @@ export async function renameFile(fileId: string, newName: string): Promise<void>
 /**
  * Update file content (stores in contentOverride)
  */
-export async function updateContent(fileId: string, content: string): Promise<void> {
+export async function updateContent(
+  fileId: string,
+  content: string
+): Promise<void> {
   await updateFile(fileId, {
     contentOverride: content,
     isDirty: true,
@@ -175,15 +191,19 @@ export async function saveToDisk(fileId: string): Promise<void> {
       // Try to find parent folder's dirHandle for better starting location
       const allFiles = await getAllFiles();
       const parentPath = file.path.split('/').slice(0, -1).join('/');
-      const parentFolder = allFiles.find(f => f.path === parentPath && f.type === 'folder');
+      const parentFolder = allFiles.find(
+        (f) => f.path === parentPath && f.type === 'folder'
+      );
 
       // Build save picker options
       const saveOptions: any = {
         suggestedName: file.virtualName,
-        types: [{
-          description: 'Markdown',
-          accept: { 'text/markdown': ['.md'] },
-        }],
+        types: [
+          {
+            description: 'Markdown',
+            accept: { 'text/markdown': ['.md'] },
+          },
+        ],
       };
 
       // Set starting directory if parent folder has a handle
@@ -222,7 +242,9 @@ export async function syncFromDisk(fileId: string): Promise<void> {
   const hasPermission = await hasFilePermission(file.fileHandle);
   if (!hasPermission) {
     permissionLost.value = true;
-    console.warn(`[virtual-fs] Permission lost for ${file.virtualName}. Reconnect folder to sync.`);
+    console.warn(
+      `[virtual-fs] Permission lost for ${file.virtualName}. Reconnect folder to sync.`
+    );
     return;
   }
 
@@ -256,7 +278,9 @@ export async function getContent(fileId: string): Promise<string> {
     if (!hasPermission) {
       // Permission lost - set signal and return empty (user needs to reconnect folder)
       permissionLost.value = true;
-      console.warn(`[virtual-fs] Permission lost for ${file.virtualName}. Reconnect folder to sync.`);
+      console.warn(
+        `[virtual-fs] Permission lost for ${file.virtualName}. Reconnect folder to sync.`
+      );
       return '';
     }
     return readFileContent(file.fileHandle);
@@ -279,7 +303,9 @@ export async function getDiskContent(fileId: string): Promise<string | null> {
     if (!hasPermission) {
       // Permission lost - set signal and return null to indicate can't read disk
       permissionLost.value = true;
-      console.warn(`[virtual-fs] Permission lost for ${file.virtualName}. Reconnect folder to sync.`);
+      console.warn(
+        `[virtual-fs] Permission lost for ${file.virtualName}. Reconnect folder to sync.`
+      );
       return null;
     }
     return readFileContent(file.fileHandle);
@@ -318,6 +344,9 @@ export async function resolveConflict(
 /**
  * Update file status
  */
-export async function setFileStatus(fileId: string, status: FileStatus): Promise<void> {
+export async function setFileStatus(
+  fileId: string,
+  status: FileStatus
+): Promise<void> {
   await updateFile(fileId, { status });
 }

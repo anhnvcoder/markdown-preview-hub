@@ -2,11 +2,17 @@
  * CommandPalette component
  * Quick search modal for files (⌘K) or content (⌘⇧K)
  */
-import { useState, useEffect, useRef, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
-import { isSearchOpen, isContentSearchOpen, modKey } from '../lib/keyboard';
-import { visibleFiles, selectFile, selectNode, expandedFolders, files } from '../stores/file-store';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { isContentSearchOpen, isSearchOpen, modKey } from '../lib/keyboard';
 import { getContent } from '../lib/virtual-fs';
+import {
+  expandedFolders,
+  files,
+  selectFile,
+  selectNode,
+  visibleFiles,
+} from '../stores/file-store';
 
 // Persist folder filter across popup opens
 const persistedScopeFolder = signal('');
@@ -22,12 +28,18 @@ export function CommandPalette() {
 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [scopeFolder, setScopeFolder] = useState<string>(persistedScopeFolder.value);
-  const [scopeInput, setScopeInput] = useState<string>(persistedScopeFolder.value);
+  const [scopeFolder, setScopeFolder] = useState<string>(
+    persistedScopeFolder.value
+  );
+  const [scopeInput, setScopeInput] = useState<string>(
+    persistedScopeFolder.value
+  );
   const [showScopeSuggestions, setShowScopeSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scopeInputRef = useRef<HTMLInputElement>(null);
-  const [fileContents, setFileContents] = useState<Map<string, string>>(new Map());
+  const [fileContents, setFileContents] = useState<Map<string, string>>(
+    new Map()
+  );
 
   // Sync scopeFolder to persisted signal
   useEffect(() => {
@@ -49,7 +61,11 @@ export function CommandPalette() {
     }
     const input = scopeInput.toLowerCase();
     return allFolders
-      .filter((f) => f.path.toLowerCase().startsWith(input) || f.path.toLowerCase().includes(input))
+      .filter(
+        (f) =>
+          f.path.toLowerCase().startsWith(input) ||
+          f.path.toLowerCase().includes(input)
+      )
       .slice(0, 10);
   }, [scopeInput, scopeFolder, allFolders]);
 
@@ -64,7 +80,7 @@ export function CommandPalette() {
 
   // Content search results with matched line
   type ContentResult = {
-    file: typeof allFiles[0];
+    file: (typeof allFiles)[0];
     matchedLine: string;
     lineNumber: number;
   };
@@ -74,9 +90,10 @@ export function CommandPalette() {
     if (isContentMode) return [];
     if (!query.trim()) return allFiles;
     const q = query.toLowerCase();
-    return allFiles.filter((f) =>
-      f.virtualName.toLowerCase().includes(q) ||
-      f.path.toLowerCase().includes(q)
+    return allFiles.filter(
+      (f) =>
+        f.virtualName.toLowerCase().includes(q) ||
+        f.path.toLowerCase().includes(q)
     );
   }, [query, isContentMode, allFiles]);
 
@@ -172,7 +189,7 @@ export function CommandPalette() {
       const item = displayResults[selectedIndex];
       const fileId = isContentMode
         ? (item as ContentResult).file.id
-        : (item as typeof fileResults[0]).id;
+        : (item as (typeof fileResults)[0]).id;
       handleSelect(fileId);
     }
   };
@@ -186,8 +203,12 @@ export function CommandPalette() {
       const expanded = new Set(expandedFolders.value);
       let currentPath = '';
       for (let i = 0; i < pathParts.length - 1; i++) {
-        currentPath = currentPath ? `${currentPath}/${pathParts[i]}` : pathParts[i];
-        const folder = files.value.find((f) => f.path === currentPath && f.type === 'folder');
+        currentPath = currentPath
+          ? `${currentPath}/${pathParts[i]}`
+          : pathParts[i];
+        const folder = files.value.find(
+          (f) => f.path === currentPath && f.type === 'folder'
+        );
         if (folder) expanded.add(folder.id);
       }
       expandedFolders.value = expanded;
@@ -212,32 +233,42 @@ export function CommandPalette() {
 
   return (
     <div
-      class="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm"
+      class='fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm'
       onClick={handleBackdropClick}
     >
-      <div class="w-full max-w-xl bg-card border border-border rounded-lg shadow-2xl overflow-hidden">
+      <div class='w-full max-w-xl bg-card border border-border rounded-lg shadow-2xl overflow-hidden'>
         {/* Search input */}
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-border/50">
-          <div class={`w-4 h-4 text-muted-foreground shrink-0 ${isContentMode ? 'i-lucide-file-search' : 'i-lucide-search'}`} />
+        <div class='flex items-center gap-3 px-4 py-3 border-b border-border/50'>
+          <div
+            class={`w-4 h-4 text-muted-foreground shrink-0 ${
+              isContentMode ? 'i-lucide-file-search' : 'i-lucide-search'
+            }`}
+          />
           <input
             ref={inputRef}
-            type="text"
+            type='text'
             value={query}
             onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
             onKeyDown={handleKeyDown}
-            placeholder={isContentMode ? 'Search content...' : 'Search files...'}
-            class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            placeholder={
+              isContentMode ? 'Search content...' : 'Search files...'
+            }
+            class='flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground'
           />
-          <kbd class="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">esc</kbd>
+          <kbd class='text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded'>
+            esc
+          </kbd>
         </div>
 
         {/* Mode tabs + Folder filter */}
-        <div class="flex items-center gap-2 px-4 py-2 border-b border-border/50 bg-muted/30">
+        <div class='flex items-center gap-2 px-4 py-2 border-b border-border/50 bg-muted/30'>
           {/* Mode toggle tabs */}
-          <div class="flex items-center gap-1 bg-muted/50 rounded-md p-0.5">
+          <div class='flex items-center gap-1 bg-muted/50 rounded-md p-0.5'>
             <button
               class={`px-2.5 py-1 text-xs rounded transition-colors ${
-                !isContentMode ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                !isContentMode
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => setSearchMode('files')}
             >
@@ -245,7 +276,9 @@ export function CommandPalette() {
             </button>
             <button
               class={`px-2.5 py-1 text-xs rounded transition-colors ${
-                isContentMode ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                isContentMode
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => setSearchMode('content')}
             >
@@ -255,12 +288,12 @@ export function CommandPalette() {
 
           {/* Folder scope autocomplete */}
           {allFolders.length > 0 && (
-            <div class="ml-auto relative">
-              <div class="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1 border border-transparent hover:border-border/50 focus-within:border-primary/50">
-                <div class="i-lucide-folder w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div class='ml-auto relative'>
+              <div class='flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1 border border-transparent hover:border-border/50 focus-within:border-primary/50'>
+                <div class='i-lucide-folder w-3.5 h-3.5 text-muted-foreground shrink-0' />
                 <input
                   ref={scopeInputRef}
-                  type="text"
+                  type='text'
                   value={scopeInput}
                   placeholder={scopeFolder || 'All folders'}
                   onInput={(e) => {
@@ -271,33 +304,37 @@ export function CommandPalette() {
                     if (!val) setScopeFolder('');
                   }}
                   onFocus={() => setShowScopeSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowScopeSuggestions(false), 150)}
-                  class="w-56 text-xs bg-transparent outline-none placeholder:text-muted-foreground"
+                  onBlur={() =>
+                    setTimeout(() => setShowScopeSuggestions(false), 150)
+                  }
+                  class='w-56 text-xs bg-transparent outline-none placeholder:text-muted-foreground'
                 />
                 {scopeFolder && (
                   <button
-                    class="text-muted-foreground hover:text-foreground p-0.5 -mr-1"
+                    class='text-muted-foreground hover:text-foreground p-0.5 -mr-1'
                     onClick={() => {
                       setScopeFolder('');
                       setScopeInput('');
                     }}
-                    title="Clear folder filter"
+                    title='Clear folder filter'
                   >
-                    <div class="i-lucide-x w-3 h-3" />
+                    <div class='i-lucide-x w-3 h-3' />
                   </button>
                 )}
               </div>
 
               {/* Suggestions dropdown */}
               {showScopeSuggestions && folderSuggestions.length > 0 && (
-                <div class="absolute top-full right-0 mt-1 w-72 max-h-48 overflow-y-auto bg-popover border border-border rounded-md shadow-lg z-10">
+                <div class='absolute top-full right-0 mt-1 w-72 max-h-48 overflow-y-auto bg-popover border border-border rounded-md shadow-lg z-10'>
                   {folderSuggestions.map((folder) => {
                     const isSelected = folder.path === scopeFolder;
                     return (
                       <button
                         key={folder.id}
                         class={`w-full text-left px-3 py-2 text-xs hover:bg-muted/50 flex items-center gap-2 ${
-                          isSelected ? 'bg-muted/50 text-primary font-medium' : ''
+                          isSelected
+                            ? 'bg-muted/50 text-primary font-medium'
+                            : ''
                         }`}
                         onMouseDown={(e) => {
                           e.preventDefault(); // Prevent blur before click
@@ -307,9 +344,17 @@ export function CommandPalette() {
                           inputRef.current?.focus();
                         }}
                       >
-                        <div class={`i-lucide-folder w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <span class="truncate">{folder.path}</span>
-                        {isSelected && <div class="i-lucide-check w-3 h-3 ml-auto text-primary shrink-0" />}
+                        <div
+                          class={`i-lucide-folder w-3.5 h-3.5 shrink-0 ${
+                            isSelected
+                              ? 'text-primary'
+                              : 'text-muted-foreground'
+                          }`}
+                        />
+                        <span class='truncate'>{folder.path}</span>
+                        {isSelected && (
+                          <div class='i-lucide-check w-3 h-3 ml-auto text-primary shrink-0' />
+                        )}
                       </button>
                     );
                   })}
@@ -320,12 +365,16 @@ export function CommandPalette() {
         </div>
 
         {/* Results */}
-        <div class="min-h-56 max-h-80 overflow-y-auto">
+        <div class='min-h-56 max-h-80 overflow-y-auto'>
           {displayResults.length === 0 ? (
-            <div class="px-4 py-8 text-center text-sm text-muted-foreground">
+            <div class='px-4 py-8 text-center text-sm text-muted-foreground'>
               {isContentMode
-                ? (query ? 'No matches found' : 'Type to search content')
-                : (query ? 'No files found' : 'No files available')}
+                ? query
+                  ? 'No matches found'
+                  : 'Type to search content'
+                : query
+                ? 'No files found'
+                : 'No files available'}
             </div>
           ) : isContentMode ? (
             // Content search results
@@ -340,11 +389,14 @@ export function CommandPalette() {
                   onClick={() => handleSelect(result.file.id)}
                   onMouseEnter={() => setSelectedIndex(index)}
                 >
-                  <div class="i-lucide-file-text w-4 h-4 text-muted-foreground shrink-0" />
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm truncate">{result.file.virtualName}</div>
-                    <div class="text-xs text-muted-foreground truncate">
-                      <span class="text-primary/70">L{result.lineNumber}:</span> {result.matchedLine}
+                  <div class='i-lucide-file-text w-4 h-4 text-muted-foreground shrink-0' />
+                  <div class='flex-1 min-w-0'>
+                    <div class='text-sm truncate'>
+                      {result.file.virtualName}
+                    </div>
+                    <div class='text-xs text-muted-foreground truncate'>
+                      <span class='text-primary/70'>L{result.lineNumber}:</span>{' '}
+                      {result.matchedLine}
                     </div>
                   </div>
                 </div>
@@ -365,13 +417,18 @@ export function CommandPalette() {
                   onClick={() => handleSelect(file.id)}
                   onMouseEnter={() => setSelectedIndex(index)}
                 >
-                  <div class="i-lucide-file-text w-4 h-4 text-muted-foreground shrink-0" />
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm truncate">{file.virtualName}</div>
-                    <div class="text-xs text-muted-foreground truncate">{file.path}</div>
+                  <div class='i-lucide-file-text w-4 h-4 text-muted-foreground shrink-0' />
+                  <div class='flex-1 min-w-0'>
+                    <div class='text-sm truncate'>{file.virtualName}</div>
+                    <div class='text-xs text-muted-foreground truncate'>
+                      {file.path}
+                    </div>
                   </div>
                   {isDirty && (
-                    <span class="w-2 h-2 rounded-full bg-warning shrink-0" title="Unsaved changes" />
+                    <span
+                      class='w-2 h-2 rounded-full bg-warning shrink-0'
+                      title='Unsaved changes'
+                    />
                   )}
                 </div>
               );
@@ -380,18 +437,18 @@ export function CommandPalette() {
         </div>
 
         {/* Footer hint */}
-        <div class="px-4 py-2 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-4">
-          <span class="flex items-center gap-1">
-            <kbd class="bg-muted/50 px-1 rounded">↑↓</kbd> navigate
+        <div class='px-4 py-2 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-4'>
+          <span class='flex items-center gap-1'>
+            <kbd class='bg-muted/50 px-1 rounded'>↑↓</kbd> navigate
           </span>
-          <span class="flex items-center gap-1">
-            <kbd class="bg-muted/50 px-1 rounded">↵</kbd> open
+          <span class='flex items-center gap-1'>
+            <kbd class='bg-muted/50 px-1 rounded'>↵</kbd> open
           </span>
-          <span class="flex items-center gap-1 ml-auto">
-            <kbd class="bg-muted/50 px-1 rounded">{modKey}K</kbd> files
+          <span class='flex items-center gap-1 ml-auto'>
+            <kbd class='bg-muted/50 px-1 rounded'>{modKey}K</kbd> files
           </span>
-          <span class="flex items-center gap-1">
-            <kbd class="bg-muted/50 px-1 rounded">{modKey}⇧K</kbd> content
+          <span class='flex items-center gap-1'>
+            <kbd class='bg-muted/50 px-1 rounded'>{modKey}⇧K</kbd> content
           </span>
         </div>
       </div>

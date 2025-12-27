@@ -3,7 +3,7 @@
  * Stores: projects, files, settings
  */
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { VirtualFile, Project, AppSettings } from '../types';
+import type { AppSettings, Project, VirtualFile } from '../types';
 
 // Database schema
 interface MDPreviewDB extends DBSchema {
@@ -42,7 +42,9 @@ export async function getDB(): Promise<IDBPDatabase<MDPreviewDB>> {
     upgrade(db) {
       // Projects store
       if (!db.objectStoreNames.contains('projects')) {
-        const projectStore = db.createObjectStore('projects', { keyPath: 'id' });
+        const projectStore = db.createObjectStore('projects', {
+          keyPath: 'id',
+        });
         projectStore.createIndex('by-name', 'name');
       }
 
@@ -101,10 +103,7 @@ export async function saveFile(file: VirtualFile): Promise<void> {
 export async function saveFiles(files: VirtualFile[]): Promise<void> {
   const db = await getDB();
   const tx = db.transaction('files', 'readwrite');
-  await Promise.all([
-    ...files.map(file => tx.store.put(file)),
-    tx.done,
-  ]);
+  await Promise.all([...files.map((file) => tx.store.put(file)), tx.done]);
 }
 
 export async function getFile(id: string): Promise<VirtualFile | undefined> {
@@ -112,7 +111,9 @@ export async function getFile(id: string): Promise<VirtualFile | undefined> {
   return db.get('files', id);
 }
 
-export async function getFileByPath(path: string): Promise<VirtualFile | undefined> {
+export async function getFileByPath(
+  path: string
+): Promise<VirtualFile | undefined> {
   const db = await getDB();
   return db.getFromIndex('files', 'by-path', path);
 }
@@ -122,7 +123,9 @@ export async function getAllFiles(): Promise<VirtualFile[]> {
   return db.getAll('files');
 }
 
-export async function getFilesByProject(projectId: string): Promise<VirtualFile[]> {
+export async function getFilesByProject(
+  projectId: string
+): Promise<VirtualFile[]> {
   const db = await getDB();
   return db.getAllFromIndex('files', 'by-project', projectId);
 }
@@ -132,7 +135,10 @@ export async function getFilesByStatus(status: string): Promise<VirtualFile[]> {
   return db.getAllFromIndex('files', 'by-status', status);
 }
 
-export async function updateFile(id: string, updates: Partial<VirtualFile>): Promise<void> {
+export async function updateFile(
+  id: string,
+  updates: Partial<VirtualFile>
+): Promise<void> {
   const db = await getDB();
   const file = await db.get('files', id);
   if (file) {
@@ -154,35 +160,67 @@ export async function clearAllFiles(): Promise<void> {
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
-  pollingActiveInterval: 30000,  // 30s for active file
-  directoryScanInterval: 60000,  // 60s for directory scan
+  pollingActiveInterval: 30000, // 30s for active file
+  directoryScanInterval: 60000, // 60s for directory scan
   ignoredFolders: [
     // JavaScript/Node
-    'node_modules', '.npm', '.yarn', '.pnpm-store',
+    'node_modules',
+    '.npm',
+    '.yarn',
+    '.pnpm-store',
     // Build outputs
-    'dist', 'build', 'out', 'target', 'bin', 'obj',
+    'dist',
+    'build',
+    'out',
+    'target',
+    'bin',
+    'obj',
     // Framework specific
-    '.next', '.nuxt', '.astro', '.svelte-kit', '.vercel', '.netlify',
+    '.next',
+    '.nuxt',
+    '.astro',
+    '.svelte-kit',
+    '.vercel',
+    '.netlify',
     // Python
-    '__pycache__', '.venv', 'venv', 'env', '.eggs', '*.egg-info',
+    '__pycache__',
+    '.venv',
+    'venv',
+    'env',
+    '.eggs',
+    '*.egg-info',
     // Ruby
-    'vendor', '.bundle',
+    'vendor',
+    '.bundle',
     // Rust
     'target',
     // Go
     'vendor',
     // Java/Kotlin
-    '.gradle', '.mvn',
+    '.gradle',
+    '.mvn',
     // IDE/Editor
-    '.idea', '.vscode', '.vs', '*.swp',
+    '.idea',
+    '.vscode',
+    '.vs',
+    '*.swp',
     // Version control
-    '.git', '.svn', '.hg',
+    '.git',
+    '.svn',
+    '.hg',
     // Cache/Temp
-    '.cache', '.temp', '.tmp', 'tmp', 'temp',
+    '.cache',
+    '.temp',
+    '.tmp',
+    'tmp',
+    'temp',
     // Misc
-    'coverage', '.nyc_output', '.turbo', '.parcel-cache',
+    'coverage',
+    '.nyc_output',
+    '.turbo',
+    '.parcel-cache',
   ],
-  showToc: false,  // Default OFF - users enable if needed
+  showToc: false, // Default OFF - users enable if needed
 };
 
 export async function getSettings(): Promise<AppSettings> {
@@ -191,7 +229,9 @@ export async function getSettings(): Promise<AppSettings> {
   return settings || DEFAULT_SETTINGS;
 }
 
-export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
+export async function saveSettings(
+  settings: Partial<AppSettings>
+): Promise<void> {
   const db = await getDB();
   const current = await getSettings();
   await db.put('settings', { ...current, ...settings, key: 'app' } as any);

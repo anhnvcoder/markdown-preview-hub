@@ -2,7 +2,7 @@
  * Theme store using @preact/signals
  * Reactive theme management for components
  */
-import { signal, effect } from '@preact/signals';
+import { signal } from '@preact/signals';
 import { getSettings } from '../lib/database';
 
 // Current theme: 'dark' or 'light'
@@ -20,7 +20,7 @@ export function initTheme(): void {
   currentTheme.value = isDark ? 'dark' : 'light';
 
   // Load showToc from settings
-  getSettings().then(settings => {
+  getSettings().then((settings) => {
     showToc.value = settings.showToc ?? false;
   });
 

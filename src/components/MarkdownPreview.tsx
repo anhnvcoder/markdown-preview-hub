@@ -13,13 +13,15 @@ import { TableOfContents } from './TableOfContents';
 interface MarkdownPreviewProps {
   content: string;
   theme?: 'dark' | 'light';
-  showToc?: boolean;
+  isTocOpen?: boolean;
+  onTocOpenChange?: (open: boolean) => void;
 }
 
 export function MarkdownPreview({
   content,
   theme = 'dark',
-  showToc = false,
+  isTocOpen = false,
+  onTocOpenChange,
 }: MarkdownPreviewProps) {
   const [html, setHtml] = useState<string>('');
   const [headings, setHeadings] = useState<TocHeading[]>([]);
@@ -104,9 +106,14 @@ export function MarkdownPreview({
 
   return (
     <div class='relative'>
-      {/* TOC floating panel */}
-      {showToc && headings.length > 0 && (
-        <TableOfContents headings={headings} containerRef={containerRef} />
+      {/* TOC - always render when headings exist */}
+      {headings.length > 0 && (
+        <TableOfContents
+          headings={headings}
+          containerRef={containerRef}
+          isDesktopOpen={isTocOpen}
+          onClose={() => onTocOpenChange?.(false)}
+        />
       )}
 
       {/* Markdown content */}

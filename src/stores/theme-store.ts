@@ -3,13 +3,9 @@
  * Reactive theme management for components
  */
 import { signal } from '@preact/signals';
-import { getSettings } from '../lib/database';
 
 // Current theme: 'dark' or 'light'
 export const currentTheme = signal<'dark' | 'light'>('light');
-
-// Show TOC panel (default false, loaded from settings)
-export const showToc = signal<boolean>(false);
 
 // TOC panel width - persisted in localStorage
 const DEFAULT_TOC_WIDTH = 220;
@@ -35,11 +31,6 @@ export function initTheme(): void {
   // Read initial theme from document
   const isDark = document.documentElement.classList.contains('dark');
   currentTheme.value = isDark ? 'dark' : 'light';
-
-  // Load showToc from settings
-  getSettings().then((settings) => {
-    showToc.value = settings.showToc ?? false;
-  });
 
   // Observe class changes on documentElement
   const observer = new MutationObserver((mutations) => {

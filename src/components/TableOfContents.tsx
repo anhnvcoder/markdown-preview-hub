@@ -1,7 +1,7 @@
 /**
  * TableOfContents component
  * Floating TOC panel with active section highlighting
- * Desktop: Fixed panel on right side with resizable width
+ * Desktop: Fixed panel on right side (slides in/out)
  * Mobile: FAB button + drawer from bottom
  */
 import type { RefObject } from 'preact';
@@ -12,14 +12,17 @@ import { MAX_TOC_WIDTH, MIN_TOC_WIDTH, tocWidth } from '../stores/theme-store';
 interface TableOfContentsProps {
   headings: TocHeading[];
   containerRef: RefObject<HTMLDivElement>;
+  isDesktopOpen?: boolean;
+  onClose?: () => void;
 }
 
 export function TableOfContents({
   headings,
   containerRef,
+  isDesktopOpen = false,
+  onClose,
 }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const isResizingRef = useRef(false);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
@@ -141,40 +144,36 @@ export function TableOfContents({
 
   return (
     <>
-      {/* Desktop TOC - hidden on mobile */}
-      <nav
-        class={`toc-panel toc-desktop ${isCollapsed ? 'toc-collapsed' : ''}`}
-        aria-label='Table of contents'
-        style={{ width: isCollapsed ? 'auto' : `${currentWidth}px` }}
-      >
-        {/* Resize handle - on left side */}
-        {!isCollapsed && (
+      {/* Desktop TOC */}
+      {isDesktopOpen && (
+        <nav
+          class='toc-panel toc-desktop'
+          aria-label='Table of contents'
+          style={{ width: `${currentWidth}px` }}
+        >
+          {/* Resize handle - on left side */}
           <div
             ref={resizeHandleRef}
             class='toc-resize-handle'
             onMouseDown={handleResizeStart}
           />
-        )}
 
-        {/* Header - title left, icon right */}
-        <div class='toc-header'>
-          <span class='toc-title'>Contents</span>
-          <button
-            class='toc-toggle'
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            aria-label={isCollapsed ? 'Expand TOC' : 'Collapse TOC'}
-          >
-            <div
-              class={`i-lucide-chevron-${
-                isCollapsed ? 'right' : 'down'
-              } w-4 h-4`}
-            />
-          </button>
-        </div>
+          {/* Header with close button */}
+          <div class='toc-header'>
+            <span class='toc-title'>Outline</span>
+            <button
+              class='toc-toggle'
+              onClick={onClose}
+              aria-label='Close outline'
+            >
+              <div class='i-lucide-x w-4 h-4' />
+            </button>
+          </div>
 
-        {/* TOC list */}
-        {!isCollapsed && renderTocList()}
-      </nav>
+          {/* TOC list */}
+          {renderTocList()}
+        </nav>
+      )}
 
       {/* Mobile FAB - shown only on mobile */}
       <button
@@ -194,7 +193,7 @@ export function TableOfContents({
             aria-label='Table of contents'
           >
             <div class='toc-drawer-header'>
-              <span class='toc-title'>Contents</span>
+              <span class='toc-title'>Outline</span>
               <button
                 class='toc-toggle'
                 onClick={() => setIsMobileOpen(false)}

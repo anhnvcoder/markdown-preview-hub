@@ -1,15 +1,17 @@
 /**
  * Table of Contents styles
- * Desktop: Fixed panel on right side
+ * Desktop: Fixed panel on right side with slide-in animation
  * Mobile: FAB button + drawer from bottom
  */
 
 /* ============ Desktop TOC Panel ============ */
 .toc-panel {
   position: fixed;
-  right: 16px;
+  right: 20px;
+  /* Position aligned with content: header(56) + tabs(36) + breadcrumb(48) + padding(16) */
   top: 156px;
-  max-height: calc(100vh - 180px);
+  /* Height: viewport - top - bottom_padding(16) - statusbar(24) */
+  max-height: calc(100vh - 196px);
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -19,12 +21,18 @@
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(8px);
-  transition: opacity 0.2s ease;
+  animation: tocSlideIn 0.2s ease;
 }
 
-.toc-panel.toc-collapsed {
-  width: auto;
-  min-width: 120px;
+@keyframes tocSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ============ TOC Resize Handle ============ */
@@ -73,11 +81,6 @@
   color: var(--muted-foreground);
 }
 
-/* Keep title visible when collapsed */
-.toc-collapsed .toc-header {
-  border-bottom: none;
-}
-
 .toc-toggle {
   display: flex;
   align-items: center;
@@ -98,7 +101,7 @@
 .toc-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 12px 0;
   list-style: none;
   margin: 0;
 }

@@ -6,7 +6,6 @@ import { useEffect, useState } from 'preact/hooks';
 import { getSettings, saveSettings } from '../lib/database';
 import { closeSettings, isSettingsOpen } from '../lib/keyboard';
 import { updatePollingInterval } from '../lib/polling';
-import { showToc as showTocSignal } from '../stores/theme-store';
 import type { AppSettings } from '../types';
 
 const DEFAULT_IGNORED = [
@@ -137,7 +136,6 @@ export function SettingsModal() {
       pollingActiveInterval: 30000,
       directoryScanInterval: 60000,
       ignoredFolders: DEFAULT_IGNORED,
-      showToc: false,
     });
     setSettings({
       theme: 'light',
@@ -150,14 +148,6 @@ export function SettingsModal() {
     document.documentElement.className = 'light';
     localStorage.setItem('md-preview-theme', 'light');
     await updatePollingInterval(30000);
-    showTocSignal.value = false;
-  };
-
-  const handleTocToggle = async () => {
-    const newValue = !settings.showToc;
-    await saveSettings({ showToc: newValue });
-    setSettings({ ...settings, showToc: newValue });
-    showTocSignal.value = newValue; // Update signal for reactive components
   };
 
   return (
@@ -192,35 +182,6 @@ export function SettingsModal() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Table of Contents */}
-          <div>
-            <label class='block text-sm font-medium mb-2'>
-              Table of Contents
-            </label>
-            <div class='flex items-center gap-3'>
-              <button
-                class={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.showToc ? 'bg-primary' : 'bg-muted border'
-                }`}
-                onClick={handleTocToggle}
-                role='switch'
-                aria-checked={settings.showToc}
-              >
-                <span
-                  class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.showToc ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span class='text-sm text-muted-foreground'>
-                {settings.showToc ? 'Enabled' : 'Disabled'}
-              </span>
-            </div>
-            <p class='text-xs text-muted-foreground mt-2'>
-              Show floating table of contents for markdown documents
-            </p>
           </div>
 
           {/* Polling Interval */}

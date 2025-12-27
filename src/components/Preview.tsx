@@ -2,7 +2,7 @@
  * Preview component
  * Markdown preview with breadcrumb navigation and edit mode
  */
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { getDiskContent } from '../lib/virtual-fs';
 import {
   activeFile,
@@ -13,7 +13,7 @@ import {
   permissionLost,
   updateFileInState,
 } from '../stores/file-store';
-import { currentTheme, showToc } from '../stores/theme-store';
+import { currentTheme, tocWidth } from '../stores/theme-store';
 import { sidebarCollapsed, viewMode } from './App';
 import { Editor } from './Editor';
 import { EmptyState } from './EmptyState';
@@ -27,6 +27,8 @@ export function Preview() {
   const mode = viewMode.value;
   const isCollapsed = sidebarCollapsed.value;
   const hasPermissionLost = permissionLost.value;
+  const [isTocOpen, setIsTocOpen] = useState(false);
+  const currentTocWidth = tocWidth.value;
 
   // Parse breadcrumb from file path
   const breadcrumbs = file ? file.path.split('/') : [];
@@ -62,6 +64,13 @@ export function Preview() {
       })();
     }
   }, [mode, fileId]);
+
+  // Close TOC when switching to edit mode
+  useEffect(() => {
+    if (mode === 'edit') {
+      setIsTocOpen(false);
+    }
+  }, [mode]);
 
   const handleExpandSidebar = () => {
     sidebarCollapsed.value = false;
@@ -156,6 +165,25 @@ export function Preview() {
               <div class='i-lucide-pencil w-3.5 h-3.5' />
               Edit
             </button>
+
+            {/* Separator */}
+            {mode === 'preview' && (
+              <div class='w-px h-4 bg-border mx-1 hidden lg:block' />
+            )}
+
+            {/* TOC toggle button */}
+            {mode === 'preview' && (
+              <button
+                class={`btn-icon p-1.5 hidden lg:flex ${
+                  isTocOpen ? 'bg-[var(--sidebar-accent)] text-foreground' : ''
+                }`}
+                onClick={() => setIsTocOpen(!isTocOpen)}
+                aria-label={isTocOpen ? 'Hide outline' : 'Show outline'}
+                title={isTocOpen ? 'Hide outline' : 'Show outline'}
+              >
+                <div class='i-lucide-list w-4 h-4' />
+              </button>
+            )}
           </div>
         </div>
 
@@ -177,12 +205,18 @@ export function Preview() {
 
         {/* Content */}
         {mode === 'preview' ? (
-          <div class='flex-1 overflow-y-auto pl-2 pr-2 py-4 scrollbar-hide'>
-            <div class='max-w-5xl mx-auto border border-border rounded-lg p-6'>
+          <div
+            class='flex-1 overflow-y-auto px-4 py-4 scrollbar-hide transition-all duration-200'
+            style={{
+              paddingRight: isTocOpen ? `${currentTocWidth + 32}px` : undefined,
+            }}
+          >
+            <div class='border border-border rounded-lg p-6'>
               <MarkdownPreview
                 content={content}
                 theme={currentTheme.value}
-                showToc={showToc.value}
+                isTocOpen={isTocOpen}
+                onTocOpenChange={setIsTocOpen}
               />
             </div>
           </div>

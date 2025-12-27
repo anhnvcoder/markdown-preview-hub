@@ -1,43 +1,91 @@
-# Astro Starter Kit: Minimal
+# MD Preview Hub
 
-```sh
-npm create astro@latest -- --template minimal
+A modern, offline-first markdown preview application built with Astro, Preact, and the File System Access API.
+
+**Live Demo:** [markdown-preview-hub.vercel.app](https://markdown-preview-hub.vercel.app)
+
+## Features
+
+- **Offline-First (PWA)** - Works without internet after first visit
+- **File System Access** - Open local folders directly in browser
+- **Live Preview** - Real-time markdown rendering with Shiki syntax highlighting
+- **Table of Contents** - Floating TOC with active section tracking
+- **Dark/Light Theme** - GitHub-style themes with system preference detection
+- **Code Highlighting** - 100+ language support via Shiki
+- **File Tabs** - Multi-file editing with tab management
+- **Auto-Sync** - Automatic file change detection and sync
+
+## Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| [Astro](https://astro.build) | Static site generation |
+| [Preact](https://preactjs.com) | UI components (lightweight React alternative) |
+| [Shiki](https://shiki.style) | Syntax highlighting |
+| [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown parsing |
+| [UnoCSS](https://unocss.dev) | Atomic CSS engine |
+| [idb](https://github.com/jakearchibald/idb) | IndexedDB wrapper |
+| [@vite-pwa/astro](https://vite-pwa-org.netlify.app) | PWA integration |
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm (recommended) or npm
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/anhnvcoder/markdown-preview-hub.git
+
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+### Commands
 
-## 🚀 Project Structure
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start dev server at `localhost:4321` |
+| `pnpm build` | Build for production to `./dist/` |
+| `pnpm preview` | Preview production build locally |
 
-Inside of your Astro project, you'll see the following folders and files:
+## Project Structure
 
-```text
-/
-├── public/
+```
+app/
+├── public/              # Static assets (PWA icons)
 ├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── components/      # Preact components
+│   ├── lib/             # Core utilities
+│   ├── stores/          # State management (signals)
+│   ├── styles/          # CSS files
+│   ├── types/           # TypeScript types
+│   └── pages/           # Astro pages
+├── docs/                # Technical documentation
+└── astro.config.mjs     # Astro configuration
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Documentation
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+See [docs/](./docs/) for detailed technical documentation:
 
-Any static assets, like images, can be placed in the `public/` directory.
+- [Architecture Overview](./docs/architecture.md)
+- [File System & Sync](./docs/file-system.md)
+- [Features Guide](./docs/features.md)
 
-## 🧞 Commands
+## Browser Support
 
-All commands are run from the root of the project, from a terminal:
+Requires browsers with File System Access API support:
+- Chrome/Edge 86+
+- Opera 72+
+- Safari 15.2+ (partial)
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## License
 
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+MIT

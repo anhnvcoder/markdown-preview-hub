@@ -126,6 +126,62 @@ export function MarkdownPreview({
     return () => container.removeEventListener('click', handleLinkClick);
   }, [html, onInternalLinkClick]);
 
+  // Render mermaid diagrams after HTML is rendered
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const mermaidContainers = container.querySelectorAll('.mermaid-container');
+    if (mermaidContainers.length === 0) return;
+
+    let cancelled = false;
+
+    // Lazy import mermaid and render diagrams
+    (async () => {
+      try {
+        const mermaid = (await import('mermaid')).default;
+
+        // Initialize mermaid with theme
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: theme === 'dark' ? 'dark' : 'default',
+          securityLevel: 'loose',
+        });
+
+        // Render each diagram
+        for (let i = 0; i < mermaidContainers.length; i++) {
+          if (cancelled) break;
+
+          const el = mermaidContainers[i] as HTMLElement;
+          const code = el.dataset.mermaid;
+          const diagramEl = el.querySelector('.mermaid-diagram') as HTMLElement;
+          const fallbackEl = el.querySelector('.mermaid-fallback') as HTMLElement;
+
+          if (!code || !diagramEl) continue;
+
+          try {
+            const id = `mermaid-${Date.now()}-${i}`;
+            const { svg } = await mermaid.render(id, code);
+            diagramEl.innerHTML = svg;
+            diagramEl.style.display = 'block';
+            if (fallbackEl) fallbackEl.style.display = 'none';
+          } catch (err) {
+            // On error, show fallback raw code
+            console.warn('[Mermaid] Render error:', err);
+            diagramEl.style.display = 'none';
+            if (fallbackEl) fallbackEl.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        console.error('[Mermaid] Import error:', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [html, theme]);
+
   if (loading && !html) {
     return (
       <div class='flex items-center justify-center p-8'>

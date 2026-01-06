@@ -283,6 +283,16 @@ function getMarkdownIt(
     const rawLang = lang || 'text';
     const language = langAliases[rawLang.toLowerCase()] || rawLang;
 
+    // Special handling for mermaid diagrams - render client-side
+    if (language === 'mermaid') {
+      return `<div class="mermaid-container" data-mermaid="${escapeAttr(code)}">
+        <div class="mermaid-diagram"></div>
+        <div class="mermaid-fallback code-block-wrapper" style="display:none">
+          <pre class="shiki shiki-plain" data-theme="${shikiTheme}"><code>${escapeHtml(code)}</code></pre>
+        </div>
+      </div>`;
+    }
+
     try {
       // Check if language is loaded
       const loadedLangs = hl.getLoadedLanguages();

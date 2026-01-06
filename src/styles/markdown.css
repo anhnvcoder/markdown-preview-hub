@@ -277,3 +277,27 @@
 .markdown-body input[type="checkbox"] {
   margin-right: 0.5rem;
 }
+
+/* Mermaid diagrams */
+.mermaid-container {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.mermaid-diagram {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--muted);
+  border-radius: 0.5rem;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Dark mode mermaid adjustments */
+.dark .mermaid-diagram {
+  background: #21262C;
+}

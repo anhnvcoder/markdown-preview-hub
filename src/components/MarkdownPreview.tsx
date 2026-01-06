@@ -141,10 +141,11 @@ export function MarkdownPreview({
       try {
         const mermaid = (await import('mermaid')).default;
 
-        // Initialize mermaid with theme
+        // Initialize mermaid with theme and hand-drawn style
         mermaid.initialize({
           startOnLoad: false,
           theme: theme === 'dark' ? 'dark' : 'default',
+          look: 'handDrawn',
           securityLevel: 'loose',
         });
 
@@ -155,7 +156,9 @@ export function MarkdownPreview({
           const el = mermaidContainers[i] as HTMLElement;
           const code = el.dataset.mermaid;
           const diagramEl = el.querySelector('.mermaid-diagram') as HTMLElement;
-          const fallbackEl = el.querySelector('.mermaid-fallback') as HTMLElement;
+          const fallbackEl = el.querySelector(
+            '.mermaid-fallback'
+          ) as HTMLElement;
 
           if (!code || !diagramEl) continue;
 

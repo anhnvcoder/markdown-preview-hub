@@ -9,7 +9,9 @@ import {
   activeFileContent,
   activeFileId,
   currentProject,
+  files,
   openFolder,
+  openTab,
   permissionLost,
   updateFileInState,
 } from '../stores/file-store';
@@ -74,6 +76,16 @@ export function Preview() {
 
   const handleExpandSidebar = () => {
     sidebarCollapsed.value = false;
+  };
+
+  // Handle internal .md link click - open file in new tab
+  const handleInternalLinkClick = (filePath: string) => {
+    const targetFile = files.value.find((f) => f.path === filePath && f.type === 'file');
+    if (targetFile) {
+      openTab(targetFile.id);
+    } else {
+      console.warn('[Preview] Internal link target not found:', filePath);
+    }
   };
 
   if (!project) {
@@ -217,6 +229,8 @@ export function Preview() {
                 theme={currentTheme.value}
                 isTocOpen={isTocOpen}
                 onTocOpenChange={setIsTocOpen}
+                currentFilePath={file.path}
+                onInternalLinkClick={handleInternalLinkClick}
               />
             </div>
           </div>

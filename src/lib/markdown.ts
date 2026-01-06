@@ -226,8 +226,14 @@ async function getHighlighter(): Promise<HighlighterCore> {
   return highlighterPromise;
 }
 
+/** Environment passed to MarkdownIt renderer */
+interface MdEnv {
+  currentFilePath?: string;
+}
+
 /**
  * Get or create cached MarkdownIt instance for theme
+ * Custom link renderer resolves relative .md links using env.currentFilePath
  */
 function getMarkdownIt(
   theme: 'dark' | 'light',
@@ -244,6 +250,30 @@ function getMarkdownIt(
     linkify: true,
     typographer: true,
   });
+
+  // Custom link renderer for internal .md links
+  const defaultLinkRender =
+    md.renderer.rules.link_open ||
+    ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
+
+  md.renderer.rules.link_open = (tokens, idx, options, env: MdEnv, self) => {
+    const token = tokens[idx];
+    const hrefIndex = token.attrIndex('href');
+
+    if (hrefIndex >= 0) {
+      const href = token.attrs![hrefIndex][1];
+
+      // Check if internal .md link and we have currentFilePath
+      if (isInternalMdLink(href) && env.currentFilePath) {
+        const resolvedPath = resolvePath(env.currentFilePath, href);
+        token.attrs![hrefIndex][1] = resolvedPath;
+        // Add data attribute for click handler
+        token.attrPush(['data-internal-link', 'true']);
+      }
+    }
+
+    return defaultLinkRender(tokens, idx, options, env, self);
+  };
 
   const shikiTheme = theme === 'dark' ? 'github-dark' : 'github-light';
 
@@ -300,16 +330,23 @@ function getMarkdownIt(
 
 /**
  * Render markdown to HTML with syntax highlighting and TOC extraction
+ * @param content - Markdown content to render
+ * @param theme - Theme for syntax highlighting
+ * @param currentFilePath - Current file path for resolving relative links (e.g. "credit/plans/plan.md")
  */
 export async function renderMarkdown(
   content: string,
-  theme: 'dark' | 'light' = 'light'
+  theme: 'dark' | 'light' = 'light',
+  currentFilePath?: string
 ): Promise<RenderResult> {
   const hl = await getHighlighter();
   const md = getMarkdownIt(theme, hl);
 
+  // Environment for renderer (used by link resolver)
+  const env: MdEnv = { currentFilePath };
+
   // Parse tokens to extract headings
-  const tokens = md.parse(content, {});
+  const tokens = md.parse(content, env);
   const headings: TocHeading[] = [];
   const usedIds = new Set<string>();
 
@@ -330,8 +367,8 @@ export async function renderMarkdown(
     }
   }
 
-  // Render with injected IDs
-  const html = md.renderer.render(tokens, md.options, {});
+  // Render with injected IDs and env for link resolution
+  const html = md.renderer.render(tokens, md.options, env);
 
   return { html, headings };
 }
@@ -388,4 +425,59 @@ function escapeAttr(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '&#10;');
+}
+
+/**
+ * Resolve relative path to absolute path based on current file location
+ * Handles ./ and ../ prefixes
+ */
+function resolvePath(currentFilePath: string, href: string): string {
+  // Skip absolute URLs and anchors
+  if (
+    href.startsWith('/') ||
+    href.startsWith('http://') ||
+    href.startsWith('https://') ||
+    href.startsWith('#')
+  ) {
+    return href;
+  }
+
+  // Get directory of current file
+  const parts = currentFilePath.split('/');
+  parts.pop(); // Remove filename
+  let currentDir = parts;
+
+  // Split href into segments
+  const hrefParts = href.split('/');
+
+  for (const segment of hrefParts) {
+    if (segment === '.' || segment === '') {
+      // Current directory, skip
+      continue;
+    } else if (segment === '..') {
+      // Parent directory
+      if (currentDir.length > 0) {
+        currentDir.pop();
+      }
+    } else {
+      // Regular path segment
+      currentDir.push(segment);
+    }
+  }
+
+  return '/' + currentDir.join('/');
+}
+
+/**
+ * Check if href is internal markdown link
+ */
+function isInternalMdLink(href: string): boolean {
+  if (
+    href.startsWith('http://') ||
+    href.startsWith('https://') ||
+    href.startsWith('#')
+  ) {
+    return false;
+  }
+  return href.endsWith('.md');
 }

@@ -15,6 +15,8 @@ interface MarkdownPreviewProps {
   theme?: 'dark' | 'light';
   isTocOpen?: boolean;
   onTocOpenChange?: (open: boolean) => void;
+  currentFilePath?: string;
+  onInternalLinkClick?: (filePath: string) => void;
 }
 
 export function MarkdownPreview({
@@ -22,6 +24,8 @@ export function MarkdownPreview({
   theme = 'dark',
   isTocOpen = false,
   onTocOpenChange,
+  currentFilePath,
+  onInternalLinkClick,
 }: MarkdownPreviewProps) {
   const [html, setHtml] = useState<string>('');
   const [headings, setHeadings] = useState<TocHeading[]>([]);
@@ -40,7 +44,7 @@ export function MarkdownPreview({
     async function render() {
       setLoading(true);
       try {
-        const result = await renderMarkdown(content, theme);
+        const result = await renderMarkdown(content, theme, currentFilePath);
         if (!cancelled) {
           setHtml(result.html);
           setHeadings(result.headings);
@@ -60,7 +64,7 @@ export function MarkdownPreview({
     return () => {
       cancelled = true;
     };
-  }, [content, theme]);
+  }, [content, theme, currentFilePath]);
 
   // Handle copy button clicks
   useEffect(() => {
@@ -95,6 +99,32 @@ export function MarkdownPreview({
     container.addEventListener('click', handleClick);
     return () => container.removeEventListener('click', handleClick);
   }, [html]);
+
+  // Handle internal .md link clicks
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !onInternalLinkClick) return;
+
+    const handleLinkClick = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest(
+        'a[data-internal-link]'
+      ) as HTMLAnchorElement | null;
+
+      if (link) {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        if (href) {
+          // Remove leading slash for file lookup
+          const filePath = href.startsWith('/') ? href.slice(1) : href;
+          onInternalLinkClick(filePath);
+        }
+      }
+    };
+
+    container.addEventListener('click', handleLinkClick);
+    return () => container.removeEventListener('click', handleLinkClick);
+  }, [html, onInternalLinkClick]);
 
   if (loading && !html) {
     return (

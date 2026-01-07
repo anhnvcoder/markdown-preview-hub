@@ -223,29 +223,79 @@
   color: var(--foreground);
 }
 
-/* Tables */
-.markdown-body table {
-  width: 100%;
+/* Tables - optimized for wide tables with many columns */
+.markdown-body .table-wrapper {
   margin: 1rem 0;
-  border-collapse: collapse;
+  overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
-  overflow: hidden;
+  /* Smooth scrolling indicator */
+  background:
+    linear-gradient(to right, var(--card) 30%, transparent),
+    linear-gradient(to left, var(--card) 30%, transparent),
+    linear-gradient(to right, rgba(0,0,0,0.1), transparent 15px),
+    linear-gradient(to left, rgba(0,0,0,0.1), transparent 15px);
+  background-position: left center, right center, left center, right center;
+  background-repeat: no-repeat;
+  background-size: 20px 100%, 20px 100%, 15px 100%, 15px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.markdown-body table {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  border: none;
+  font-size: 0.875rem;
 }
 
 .markdown-body th,
 .markdown-body td {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
   text-align: left;
+  vertical-align: top;
 }
 
+/* Header cells - compact, no wrap */
 .markdown-body th {
   background: var(--muted);
   font-weight: 600;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Smart column classes added by JS */
+.markdown-body td.col-compact {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.markdown-body td.col-medium {
+  min-width: 120px;
+  max-width: 200px;
+}
+
+.markdown-body td.col-wide {
+  min-width: 250px;
+  max-width: 450px;
+}
+
+/* Section header rows (bold first cell spanning info) */
+.markdown-body tr.section-header td {
+  background: var(--muted);
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
 }
 
 .markdown-body tr:hover {
+  background: var(--muted);
+}
+
+.markdown-body tr.section-header:hover {
   background: var(--muted);
 }
 

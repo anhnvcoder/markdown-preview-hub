@@ -185,6 +185,82 @@ export function MarkdownPreview({
     };
   }, [html, theme]);
 
+  // Optimize tables: wrap in scroll container, smart column sizing, section headers
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const tables = container.querySelectorAll('table');
+    if (tables.length === 0) return;
+
+    tables.forEach((table) => {
+      // Skip if already wrapped
+      if (table.parentElement?.classList.contains('table-wrapper')) return;
+
+      // Wrap table in scroll container
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrapper';
+      table.parentNode?.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+
+      // Analyze columns and apply smart sizing
+      const rows = table.querySelectorAll('tr');
+      if (rows.length === 0) return;
+
+      const headerCells = rows[0].querySelectorAll('th');
+      const numCols = headerCells.length;
+      if (numCols === 0) return;
+
+      // Calculate max content length per column
+      const colMaxLengths: number[] = new Array(numCols).fill(0);
+      const colHasLongText: boolean[] = new Array(numCols).fill(false);
+
+      rows.forEach((row) => {
+        const cells = row.querySelectorAll('td, th');
+        cells.forEach((cell, idx) => {
+          if (idx >= numCols) return;
+          const text = cell.textContent || '';
+          colMaxLengths[idx] = Math.max(colMaxLengths[idx], text.length);
+          // Check for long text (likely description columns)
+          if (text.length > 50) colHasLongText[idx] = true;
+        });
+      });
+
+      // Apply column classes based on content analysis
+      rows.forEach((row, rowIdx) => {
+        const cells = row.querySelectorAll('td');
+
+        // Detect section header rows: first cell is bold/strong and other cells are mostly empty
+        if (cells.length > 0) {
+          const firstCell = cells[0];
+          const firstCellText = firstCell.textContent?.trim() || '';
+          const hasStrong = firstCell.querySelector('strong') !== null;
+          const startsWithBold = firstCellText.startsWith('**') || hasStrong;
+          const otherCellsEmpty = Array.from(cells)
+            .slice(1)
+            .every((c) => !c.textContent?.trim() || c.textContent?.trim() === '-');
+
+          if ((startsWithBold || /^\d+\.\s/.test(firstCellText)) && otherCellsEmpty && firstCellText.length > 3) {
+            row.classList.add('section-header');
+          }
+        }
+
+        // Apply column sizing classes
+        cells.forEach((cell, idx) => {
+          if (idx >= numCols) return;
+
+          if (colMaxLengths[idx] <= 10) {
+            cell.classList.add('col-compact');
+          } else if (colHasLongText[idx] || colMaxLengths[idx] > 80) {
+            cell.classList.add('col-wide');
+          } else if (colMaxLengths[idx] > 30) {
+            cell.classList.add('col-medium');
+          }
+        });
+      });
+    });
+  }, [html]);
+
   if (loading && !html) {
     return (
       <div class='flex items-center justify-center p-8'>

@@ -8,9 +8,11 @@
   color: var(--foreground);
   font-size: 1rem;
   line-height: 1.75;
-  max-width: 900px;
+  width: 100%;
+  max-width: min(90vw, 100%);
   margin-left: auto;
   margin-right: auto;
+  padding: 0 1rem;
   overflow-wrap: break-word;
   word-wrap: break-word;
 }

@@ -3,6 +3,7 @@
  * Renders markdown content with Shiki highlighting and TOC
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { processImages } from '../lib/image-loader';
 import {
   preloadHighlighter,
   renderMarkdown,
@@ -238,9 +239,15 @@ export function MarkdownPreview({
           const startsWithBold = firstCellText.startsWith('**') || hasStrong;
           const otherCellsEmpty = Array.from(cells)
             .slice(1)
-            .every((c) => !c.textContent?.trim() || c.textContent?.trim() === '-');
+            .every(
+              (c) => !c.textContent?.trim() || c.textContent?.trim() === '-'
+            );
 
-          if ((startsWithBold || /^\d+\.\s/.test(firstCellText)) && otherCellsEmpty && firstCellText.length > 3) {
+          if (
+            (startsWithBold || /^\d+\.\s/.test(firstCellText)) &&
+            otherCellsEmpty &&
+            firstCellText.length > 3
+          ) {
             row.classList.add('section-header');
           }
         }
@@ -260,6 +267,17 @@ export function MarkdownPreview({
       });
     });
   }, [html]);
+
+  // Load local images from filesystem
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !currentFilePath) return;
+
+    // Process images after HTML is rendered
+    processImages(container, currentFilePath).catch((err) => {
+      console.warn('[MarkdownPreview] Error processing images:', err);
+    });
+  }, [html, currentFilePath]);
 
   if (loading && !html) {
     return (

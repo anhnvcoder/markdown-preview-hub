@@ -312,7 +312,8 @@ export function Sidebar() {
           }
         }}
       >
-        {!project ? (
+        {/* Show "No folder opened" when no project OR when all files deleted (unless creating) */}
+        {(!project || files.value.length === 0) && !inlineCreating.value ? (
           <div class='text-sm text-muted-foreground p-2 flex flex-col items-center justify-center h-full text-center'>
             <div class='i-lucide-folder-open w-12 h-12 mb-3 opacity-20' />
             <p class='mb-3 font-medium'>No folder opened</p>

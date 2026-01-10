@@ -135,28 +135,40 @@ export async function updateContent(
 /**
  * Delete/hide a file
  * - Web-only files: actually delete from DB
- * - Disk files: just hide (set isHidden=true)
+ * - Root folders (no parent): always delete from DB (can't be synced back)
+ * - Other disk files: just hide (set isHidden=true)
  */
 export async function hideOrDeleteFile(fileId: string): Promise<void> {
   const file = await getFile(fileId);
   if (!file) return;
 
-  if (file.isWebOnly) {
-    // Actually delete web-only files
-    await dbDeleteFile(fileId);
-  } else {
-    // Hide disk files (don't delete from disk)
-    await updateFile(fileId, { isHidden: true });
-  }
+  // Check if it's a root folder (path has no parent)
+  const isRootFolder = file.type === 'folder' && !file.path.includes('/');
+  const shouldDelete = file.isWebOnly || isRootFolder;
 
-  // Handle children for folders
+  // For folders, handle children FIRST (before deleting parent)
   if (file.type === 'folder') {
     const allFiles = await getAllFiles();
-    for (const child of allFiles) {
-      if (child.path.startsWith(file.path + '/')) {
-        await hideOrDeleteFile(child.id);
+    // Find all children (files/folders with paths starting with this folder's path)
+    const children = allFiles.filter(
+      (child) => child.id !== file.id && child.path.startsWith(file.path + '/')
+    );
+
+    // Delete/hide children
+    for (const child of children) {
+      if (shouldDelete) {
+        await dbDeleteFile(child.id);
+      } else {
+        await updateFile(child.id, { isHidden: true });
       }
     }
+  }
+
+  // Now delete/hide the folder/file itself
+  if (shouldDelete) {
+    await dbDeleteFile(fileId);
+  } else {
+    await updateFile(fileId, { isHidden: true });
   }
 }
 

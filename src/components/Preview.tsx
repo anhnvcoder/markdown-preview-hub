@@ -80,7 +80,9 @@ export function Preview() {
 
   // Handle internal .md link click - open file in new tab
   const handleInternalLinkClick = (filePath: string) => {
-    const targetFile = files.value.find((f) => f.path === filePath && f.type === 'file');
+    const targetFile = files.value.find(
+      (f) => f.path === filePath && f.type === 'file'
+    );
     if (targetFile) {
       openTab(targetFile.id);
     } else {
@@ -88,7 +90,8 @@ export function Preview() {
     }
   };
 
-  if (!project) {
+  // Show welcome screen when no project OR when all files are deleted
+  if (!project || files.value.length === 0) {
     return (
       <main class='app-main bg-background'>
         <EmptyState />

@@ -18,6 +18,7 @@ import {
   activeFileId,
   closeActiveTab,
   currentProject,
+  files,
   loadPersistedProject,
   openFolder,
   refreshFiles,
@@ -160,6 +161,14 @@ export function App() {
       setProjectRef(null);
     };
   }, [currentProject.value?.id]);
+
+  // Clear project when all files are deleted (stops polling)
+  useEffect(() => {
+    if (currentProject.value && files.value.length === 0) {
+      console.log('[App] All files deleted - clearing project to stop polling');
+      currentProject.value = null;
+    }
+  }, [files.value.length]);
 
   // Update active file for polling priority
   useEffect(() => {

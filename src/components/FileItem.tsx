@@ -296,9 +296,12 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
     e.stopPropagation();
     setShowMenu(false);
     const itemType = node.type === 'folder' ? 'folder' : 'file';
-    const confirmMsg = node.isWebOnly
-      ? `Delete "${node.virtualName}"? This cannot be undone.`
-      : `Hide "${node.virtualName}" from the list? The ${itemType} will remain on disk and can be restored by syncing.`;
+    // Root folders (no parent path) can't be synced back, so delete permanently
+    const isRootFolder = node.type === 'folder' && !node.path.includes('/');
+    const confirmMsg =
+      node.isWebOnly || isRootFolder
+        ? `Delete "${node.virtualName}"? This cannot be undone.`
+        : `Hide "${node.virtualName}" from the list? The ${itemType} will remain on disk and can be restored by syncing.`;
     if (!confirm(confirmMsg)) return;
     try {
       // If this is the active file, close tab and clear selection
@@ -474,13 +477,16 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
 
                 <div class='h-px bg-border/50 my-1' />
 
-                {/* Delete/Hide option */}
+                {/* Delete/Hide option - Delete for webOnly and root folders */}
                 <button
                   class='w-full px-3 py-1.5 text-left text-sm text-destructive hover:bg-muted/50 transition-colors flex items-center gap-2'
                   onClick={handleDelete}
                 >
                   <div class='i-lucide-trash-2 w-3 h-3' />
-                  {node.isWebOnly ? 'Delete' : 'Hide'}
+                  {node.isWebOnly ||
+                  (node.type === 'folder' && !node.path.includes('/'))
+                    ? 'Delete'
+                    : 'Hide'}
                 </button>
               </div>
             )}

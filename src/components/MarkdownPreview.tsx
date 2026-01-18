@@ -127,6 +127,34 @@ export function MarkdownPreview({
     return () => container.removeEventListener('click', handleLinkClick);
   }, [html, onInternalLinkClick]);
 
+  // Handle anchor link clicks (scroll to heading)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleAnchorClick = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a') as HTMLAnchorElement | null;
+
+      if (!link) return;
+
+      const href = link.getAttribute('href');
+      // Check if it's an anchor link (starts with #)
+      if (href && href.startsWith('#')) {
+        e.preventDefault();
+        // Decode URL-encoded characters (Vietnamese, Japanese, etc.)
+        const targetId = decodeURIComponent(href.slice(1));
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    };
+
+    container.addEventListener('click', handleAnchorClick);
+    return () => container.removeEventListener('click', handleAnchorClick);
+  }, [html]);
+
   // Render mermaid diagrams after HTML is rendered
   useEffect(() => {
     const container = containerRef.current;

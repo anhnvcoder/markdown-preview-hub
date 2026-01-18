@@ -395,12 +395,14 @@ export function preloadHighlighter(): void {
 /**
  * Convert text to URL-friendly slug for heading IDs
  * Handles duplicates by appending counter
+ * Preserves Unicode letters (Vietnamese, Japanese, etc.)
  */
 function slugify(text: string, usedIds: Set<string>): string {
   let slug = text
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '') // Remove special chars
+    // Keep Unicode letters (\p{L}), numbers (\p{N}), spaces, and hyphens
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
     .replace(/\s+/g, '-') // Spaces to hyphens
     .replace(/-+/g, '-') // Collapse multiple hyphens
     .replace(/^-|-$/g, ''); // Trim hyphens

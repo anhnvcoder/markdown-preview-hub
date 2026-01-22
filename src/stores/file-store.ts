@@ -14,6 +14,7 @@ import {
 import {
   openDirectory,
   openFilePicker,
+  processDroppedFiles,
   scanDirectory,
   verifyPermission,
 } from '../lib/file-system';
@@ -52,6 +53,9 @@ export const openTabs = signal<string[]>([]);
 /** Permission lost flag - true when file handles need reconnection */
 export const permissionLost = signal<boolean>(false);
 
+/** Custom order for root folders (array of folder IDs) */
+export const rootFolderOrder = signal<string[]>([]);
+
 // ============ Computed ============
 
 /** Get active file object */
@@ -68,7 +72,8 @@ export const visibleFiles = computed(() => {
 /** Build file tree structure */
 export const fileTree = computed(() => {
   const visible = visibleFiles.value;
-  return buildTree(visible);
+  const order = rootFolderOrder.value;
+  return buildTree(visible, order);
 });
 
 /** Get file counts by status */
@@ -403,6 +408,16 @@ export async function loadPersistedProject(): Promise<void> {
         dirHandle: null as any, // Handle is lost after refresh
       };
     }
+
+    // Load root folder order from localStorage
+    const savedOrder = localStorage.getItem('md-preview-root-folder-order');
+    if (savedOrder) {
+      try {
+        rootFolderOrder.value = JSON.parse(savedOrder);
+      } catch {
+        console.warn('[file-store] Error parsing root folder order');
+      }
+    }
   } catch (err) {
     console.error('[file-store] Error loading persisted data:', err);
   }
@@ -418,6 +433,59 @@ export function persistTabs(): void {
   } else {
     localStorage.removeItem('md-preview-active-file');
   }
+}
+
+/**
+ * Reorder root folders by moving a folder to a new position
+ * @param draggedId - ID of the folder being dragged
+ * @param targetId - ID of the folder to drop before (or null for end)
+ */
+export function reorderRootFolders(
+  draggedId: string,
+  targetId: string | null
+): void {
+  // Get all root folders
+  const rootFolders = files.value.filter(
+    (f) => f.type === 'folder' && !f.path.includes('/')
+  );
+
+  // Build current order (use existing order or create from current folders)
+  let currentOrder = rootFolderOrder.value.length > 0
+    ? [...rootFolderOrder.value]
+    : rootFolders.map((f) => f.id);
+
+  // Ensure all current root folders are in the order
+  for (const folder of rootFolders) {
+    if (!currentOrder.includes(folder.id)) {
+      currentOrder.push(folder.id);
+    }
+  }
+  // Remove any IDs that no longer exist
+  currentOrder = currentOrder.filter((id) =>
+    rootFolders.some((f) => f.id === id)
+  );
+
+  // Remove dragged item from current position
+  const draggedIndex = currentOrder.indexOf(draggedId);
+  if (draggedIndex === -1) return;
+  currentOrder.splice(draggedIndex, 1);
+
+  // Insert at new position
+  if (targetId === null) {
+    // Drop at end
+    currentOrder.push(draggedId);
+  } else {
+    const targetIndex = currentOrder.indexOf(targetId);
+    if (targetIndex === -1) {
+      currentOrder.push(draggedId);
+    } else {
+      currentOrder.splice(targetIndex, 0, draggedId);
+    }
+  }
+
+  // Update signal and persist
+  rootFolderOrder.value = currentOrder;
+  localStorage.setItem('md-preview-root-folder-order', JSON.stringify(currentOrder));
 }
 
 /**
@@ -831,13 +899,144 @@ export async function uploadFolder(
   return { count: filesToSave.length, rootFolderId: rootFolder.id };
 }
 
+/**
+ * Handle dropped files/folders from drag-drop
+ * @param dataTransfer - DataTransfer from drop event
+ * @param targetFolderId - Optional folder ID to drop into (null = root)
+ */
+export async function handleDroppedFiles(
+  dataTransfer: DataTransfer,
+  targetFolderId: string | null = null
+): Promise<{ count: number; firstFileId: string | null }> {
+  // Create temporary project if none exists
+  if (!currentProject.value) {
+    const project: Project = {
+      id: crypto.randomUUID(),
+      name: 'Dropped Files',
+      dirHandle: null as any,
+      createdAt: Date.now(),
+      lastOpenedAt: Date.now(),
+    };
+    await saveProject(project);
+    currentProject.value = project;
+  }
+
+  // Process dropped items
+  const droppedItems = await processDroppedFiles(dataTransfer);
+  if (droppedItems.length === 0) {
+    return { count: 0, firstFileId: null };
+  }
+
+  // Determine target path
+  let targetPath = '';
+  if (targetFolderId) {
+    const targetFolder = files.value.find((f) => f.id === targetFolderId);
+    if (targetFolder && targetFolder.type === 'folder') {
+      targetPath = targetFolder.path;
+    }
+  }
+
+  const newFiles: VirtualFile[] = [];
+  const foldersToExpand: string[] = [];
+
+  // Process each dropped item
+  for (const item of droppedItems) {
+    const itemPath = targetPath ? `${targetPath}/${item.name}` : item.name;
+    const itemName = item.name.split('/').pop() || item.name;
+
+    // Check if already exists
+    const existingIndex = files.value.findIndex((f) => f.path === itemPath);
+
+    if (item.isFolder) {
+      // Create folder entry
+      const folderId = existingIndex >= 0
+        ? files.value[existingIndex].id
+        : crypto.randomUUID();
+
+      if (existingIndex < 0) {
+        newFiles.push({
+          id: folderId,
+          path: itemPath,
+          realPath: itemPath,
+          fileHandle: null,
+          dirHandle: null,
+          virtualName: itemName,
+          contentOverride: null,
+          isDirty: false,
+          isHidden: false,
+          isWebOnly: true,
+          lastSyncedAt: Date.now(),
+          diskLastModified: null,
+          status: 'web-only',
+          type: 'folder',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      }
+      foldersToExpand.push(folderId);
+    } else {
+      // Create file entry
+      const newFile: VirtualFile = {
+        id: existingIndex >= 0
+          ? files.value[existingIndex].id
+          : crypto.randomUUID(),
+        path: itemPath,
+        realPath: itemPath,
+        fileHandle: existingIndex >= 0 ? files.value[existingIndex].fileHandle : null,
+        dirHandle: null,
+        virtualName: itemName,
+        contentOverride: item.content,
+        isDirty: false,
+        isHidden: false,
+        isWebOnly: existingIndex >= 0 ? files.value[existingIndex].isWebOnly : true,
+        lastSyncedAt: Date.now(),
+        diskLastModified: Date.now(),
+        status: existingIndex >= 0 && !files.value[existingIndex].isWebOnly
+          ? 'modified'
+          : 'web-only',
+        type: 'file',
+        createdAt: existingIndex >= 0
+          ? files.value[existingIndex].createdAt
+          : Date.now(),
+        updatedAt: Date.now(),
+      };
+      newFiles.push(newFile);
+    }
+  }
+
+  // Save to DB and update state
+  if (newFiles.length > 0) {
+    await saveFiles(newFiles);
+    // Update existing files or add new ones
+    const updatedFiles = files.value.filter(
+      (f) => !newFiles.some((nf) => nf.id === f.id)
+    );
+    files.value = [...updatedFiles, ...newFiles];
+
+    // Expand target folder and any new folders
+    if (targetFolderId) {
+      foldersToExpand.push(targetFolderId);
+    }
+    if (foldersToExpand.length > 0) {
+      expandedFolders.value = new Set([
+        ...expandedFolders.value,
+        ...foldersToExpand,
+      ]);
+    }
+  }
+
+  // Return first file for selection
+  const firstFile = newFiles.find((f) => f.type === 'file');
+  return { count: newFiles.length, firstFileId: firstFile?.id ?? null };
+}
+
 // ============ Helpers ============
 
 interface TreeNode extends VirtualFile {
   children: TreeNode[];
 }
 
-function buildTree(flatFiles: VirtualFile[]): TreeNode[] {
+function buildTree(flatFiles: VirtualFile[], customRootOrder: string[] = []): TreeNode[] {
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
 
@@ -857,7 +1056,7 @@ function buildTree(flatFiles: VirtualFile[]): TreeNode[] {
     }
   }
 
-  // Sort: folders first, then alphabetically
+  // Sort children: folders first, then alphabetically
   const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
     return nodes
       .sort((a, b) => {
@@ -872,5 +1071,31 @@ function buildTree(flatFiles: VirtualFile[]): TreeNode[] {
       }));
   };
 
-  return sortNodes(roots);
+  // Sort root nodes with custom order if provided
+  const sortedRoots = sortNodes(roots);
+
+  // Apply custom order to root folders if available
+  if (customRootOrder.length > 0) {
+    // Separate folders and files at root level
+    const rootFolders = sortedRoots.filter((n) => n.type === 'folder');
+    const rootFiles = sortedRoots.filter((n) => n.type === 'file');
+
+    // Sort root folders by custom order
+    rootFolders.sort((a, b) => {
+      const indexA = customRootOrder.indexOf(a.id);
+      const indexB = customRootOrder.indexOf(b.id);
+      // If not in custom order, put at end (alphabetically)
+      if (indexA === -1 && indexB === -1) {
+        return a.virtualName.localeCompare(b.virtualName);
+      }
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+
+    // Return folders first, then files
+    return [...rootFolders, ...rootFiles];
+  }
+
+  return sortedRoots;
 }

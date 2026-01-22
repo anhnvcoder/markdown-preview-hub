@@ -1,11 +1,37 @@
 /**
  * Image loader for local filesystem images
  * Uses File System Access API to load images referenced in markdown
+ * Handles blob URL invalidation after page reload
  */
 import { currentProject, files } from '../stores/file-store';
 
 // Cache blob URLs to avoid reloading same images
 const blobUrlCache = new Map<string, string>();
+
+// Track which blob URLs have been verified as valid
+const verifiedUrls = new Set<string>();
+
+/**
+ * Check if a blob URL is still valid
+ * Blob URLs become invalid after page reload
+ */
+async function isBlobUrlValid(blobUrl: string): Promise<boolean> {
+  // If already verified in this session, it's valid
+  if (verifiedUrls.has(blobUrl)) {
+    return true;
+  }
+
+  try {
+    const response = await fetch(blobUrl, { method: 'HEAD' });
+    if (response.ok) {
+      verifiedUrls.add(blobUrl);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Resolve relative image path to absolute path based on markdown file location
@@ -53,12 +79,24 @@ export function resolveImagePath(
 /**
  * Load an image from the file system and return a blob URL
  * @param resolvedPath - Absolute path within the project (e.g., "credit/docs/Figma/img.png")
+ * @param forceReload - Force reload even if cached
  * @returns Blob URL or null if not found
  */
-export async function loadImage(resolvedPath: string): Promise<string | null> {
-  // Check cache first
-  if (blobUrlCache.has(resolvedPath)) {
-    return blobUrlCache.get(resolvedPath)!;
+export async function loadImage(
+  resolvedPath: string,
+  forceReload = false
+): Promise<string | null> {
+  // Check cache first (unless force reload)
+  if (!forceReload && blobUrlCache.has(resolvedPath)) {
+    const cachedUrl = blobUrlCache.get(resolvedPath)!;
+    // Verify the blob URL is still valid
+    const isValid = await isBlobUrlValid(cachedUrl);
+    if (isValid) {
+      return cachedUrl;
+    }
+    // Invalid - remove from cache and reload
+    blobUrlCache.delete(resolvedPath);
+    URL.revokeObjectURL(cachedUrl);
   }
 
   const project = currentProject.value;
@@ -101,6 +139,7 @@ export async function loadImage(resolvedPath: string): Promise<string | null> {
     // Create blob URL
     const blobUrl = URL.createObjectURL(file);
     blobUrlCache.set(resolvedPath, blobUrl);
+    verifiedUrls.add(blobUrl);
 
     return blobUrl;
   } catch (err) {
@@ -216,4 +255,47 @@ export function clearImageCache(): void {
     URL.revokeObjectURL(url);
   }
   blobUrlCache.clear();
+  verifiedUrls.clear();
+}
+
+/**
+ * Reload all images in a container
+ * Useful after folder reconnection or when images become stale
+ */
+export async function reloadImages(
+  container: HTMLElement,
+  markdownPath: string
+): Promise<void> {
+  const images = container.querySelectorAll('img');
+
+  const reloadPromises = Array.from(images).map(async (img) => {
+    const originalSrc = img.dataset.originalSrc || img.getAttribute('src');
+    if (!originalSrc) return;
+
+    // Skip external images
+    if (
+      originalSrc.startsWith('http://') ||
+      originalSrc.startsWith('https://') ||
+      originalSrc.startsWith('data:')
+    ) {
+      return;
+    }
+
+    // Force reload from filesystem
+    const resolvedPath = resolveImagePath(markdownPath, originalSrc);
+    const blobUrl = await loadImage(resolvedPath, true);
+
+    if (blobUrl) {
+      img.src = blobUrl;
+      img.dataset.originalSrc = originalSrc;
+      // Reset error styling
+      img.style.opacity = '';
+      img.style.border = '';
+      img.style.padding = '';
+      img.style.borderRadius = '';
+      img.alt = img.alt.replace(/^\[Image not found:.*\]$/, '');
+    }
+  });
+
+  await Promise.all(reloadPromises);
 }

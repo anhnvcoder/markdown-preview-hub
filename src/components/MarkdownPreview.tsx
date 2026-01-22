@@ -3,7 +3,8 @@
  * Renders markdown content with Shiki highlighting and TOC
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { processImages } from '../lib/image-loader';
+import { processImages, reloadImages } from '../lib/image-loader';
+import { currentProject } from '../stores/file-store';
 import {
   preloadHighlighter,
   renderMarkdown,
@@ -306,6 +307,18 @@ export function MarkdownPreview({
       console.warn('[MarkdownPreview] Error processing images:', err);
     });
   }, [html, currentFilePath]);
+
+  // Reload images when folder is reconnected (dirHandle restored)
+  useEffect(() => {
+    const container = containerRef.current;
+    const project = currentProject.value;
+    if (!container || !currentFilePath || !project?.dirHandle) return;
+
+    // Reload images that may have become stale
+    reloadImages(container, currentFilePath).catch((err) => {
+      console.warn('[MarkdownPreview] Error reloading images:', err);
+    });
+  }, [currentProject.value?.dirHandle, currentFilePath]);
 
   if (loading && !html) {
     return (

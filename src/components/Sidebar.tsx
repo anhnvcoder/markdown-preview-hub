@@ -13,7 +13,9 @@ import {
   expandedFolders,
   files,
   fileTree,
+  handleDroppedFiles,
   openFolder,
+  reorderRootFolders,
   selectedNodeId,
   selectFile,
   selectNode,
@@ -29,6 +31,9 @@ export const inlineCreating = signal<{
   type: 'file' | 'folder';
   parentId: string | null;
 } | null>(null);
+
+// Signal for folder being dragged (for reorder)
+export const draggingFolderId = signal<string | null>(null);
 
 /**
  * Root level inline create input
@@ -135,6 +140,86 @@ export function Sidebar() {
   const project = currentProject.value;
   const syncing = isSyncing.value;
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isReorderEndTarget, setIsReorderEndTarget] = useState(false);
+
+  // Drag-drop handlers for root level (empty space only)
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+
+    // Get fresh value from signal
+    const dragId = draggingFolderId.value;
+
+    // Set drop effect
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = dragId ? 'move' : 'copy';
+    }
+
+    // Check if it's an internal folder reorder (drop at end)
+    if (dragId) {
+      // Only show end-target when over empty space (not over any item)
+      const target = e.target as HTMLElement;
+      const isOverItem =
+        target.closest('[data-folder-drop-target]') ||
+        target.closest('[data-file-item]');
+      if (!isOverItem) {
+        setIsReorderEndTarget(true);
+      } else {
+        setIsReorderEndTarget(false);
+      }
+      return;
+    }
+
+    // For external file drops, we don't highlight the sidebar
+    // Only individual folders highlight themselves
+    setIsDragOver(false);
+  };
+
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    if (
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom
+    ) {
+      setIsDragOver(false);
+      setIsReorderEndTarget(false);
+    }
+  };
+
+  const handleDrop = async (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    setIsReorderEndTarget(false);
+
+    if (!e.dataTransfer) return;
+
+    // If dropped on a folder target, let the folder handle it
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-folder-drop-target]')) {
+      return; // Let FileItem handle this drop
+    }
+
+    e.stopPropagation();
+
+    // Get fresh value from signal (don't use stale captured value)
+    const dragId = draggingFolderId.value;
+
+    // Check if it's an internal folder reorder (drop at end)
+    if (dragId) {
+      reorderRootFolders(dragId, null); // null = end of list
+      draggingFolderId.value = null;
+      return;
+    }
+
+    const result = await handleDroppedFiles(e.dataTransfer, null);
+    if (result.firstFileId) {
+      selectNode(result.firstFileId);
+      await selectFile(result.firstFileId);
+    }
+  };
 
   const handleNewClick = () => {
     setShowAddMenu(!showAddMenu);
@@ -143,7 +228,7 @@ export function Sidebar() {
   const handleRefresh = async () => {
     // Always show confirmation for full rescan
     const proceed = confirm(
-      'Sync from disk will replace all local changes with disk content.\n\nHidden files will be restored. Web-only files will be kept.\n\nContinue?'
+      'Sync from disk will replace all local changes with disk content.\n\nHidden files will be restored. Web-only files will be kept.\n\nContinue?',
     );
     if (!proceed) return;
 
@@ -151,7 +236,7 @@ export function Sidebar() {
     if (result === 'need-reopen') {
       const rootName = project?.name || 'project';
       const reopen = confirm(
-        `Folder access lost after page refresh.\n\nPlease reopen the ROOT folder "${rootName}" (not a subfolder) to restore access.`
+        `Folder access lost after page refresh.\n\nPlease reopen the ROOT folder "${rootName}" (not a subfolder) to restore access.`,
       );
       if (reopen) {
         await openFolder();
@@ -182,7 +267,7 @@ export function Sidebar() {
           const parentPath = selected.path.split('/').slice(0, -1).join('/');
           if (parentPath) {
             const parentFolder = files.value.find(
-              (f) => f.path === parentPath && f.type === 'folder'
+              (f) => f.path === parentPath && f.type === 'folder',
             );
             parentId = parentFolder?.id ?? null;
             if (parentId) {
@@ -301,7 +386,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* File tree - click empty space to deselect */}
+      {/* File tree - click empty space to deselect, supports drag-drop */}
       <div
         class='flex-1 overflow-y-auto p-2'
         onClick={(e) => {
@@ -311,6 +396,9 @@ export function Sidebar() {
             selectedNodeId.value = null;
           }
         }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         {/* Show "No folder opened" when no project OR when all files deleted (unless creating) */}
         {(!project || files.value.length === 0) && !inlineCreating.value ? (
@@ -355,6 +443,29 @@ export function Sidebar() {
             {tree.map((node) => (
               <FileItem key={node.id} node={node} />
             ))}
+            {/* Drop zone at end for reordering folders */}
+            {draggingFolderId.value && (
+              <div
+                class={`h-8 mt-1 rounded-md border-2 border-dashed transition-colors ${
+                  isReorderEndTarget ? 'border-primary' : 'border-transparent'
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsReorderEndTarget(true);
+                }}
+                onDragLeave={() => setIsReorderEndTarget(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const dragId = draggingFolderId.value;
+                  if (dragId) {
+                    reorderRootFolders(dragId, null);
+                    draggingFolderId.value = null;
+                  }
+                  setIsReorderEndTarget(false);
+                }}
+              />
+            )}
           </div>
         )}
       </div>

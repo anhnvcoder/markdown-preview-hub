@@ -168,6 +168,16 @@ body {
   display: none; /* Chrome/Safari/Opera */
 }
 
+/* TabBar horizontal scroll - hidden scrollbar, scroll via wheel */
+.tabbar-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.tabbar-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
 /* Markdown body styles */
 .markdown-body {
   color: var(--foreground);

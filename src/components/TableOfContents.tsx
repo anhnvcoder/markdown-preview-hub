@@ -26,6 +26,7 @@ export function TableOfContents({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const isResizingRef = useRef(false);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
+  const tocListRef = useRef<HTMLUListElement>(null);
   const currentWidth = tocWidth.value;
 
   // Track active heading with IntersectionObserver
@@ -63,12 +64,21 @@ export function TableOfContents({
       {
         rootMargin: '-60px 0px -70% 0px', // Trigger when heading is near top
         threshold: 0,
-      }
+      },
     );
 
     headingElements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [headings, containerRef]);
+
+  // Auto-scroll TOC list to keep active item visible
+  useEffect(() => {
+    if (!activeId || !tocListRef.current) return;
+    const activeItem = tocListRef.current.querySelector('.toc-active');
+    if (activeItem) {
+      activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [activeId]);
 
   // TOC resize handlers
   const handleResizeStart = useCallback((e: Event) => {
@@ -86,7 +96,7 @@ export function TableOfContents({
       // Calculate width from right edge of viewport
       const newWidth = Math.min(
         MAX_TOC_WIDTH,
-        Math.max(MIN_TOC_WIDTH, window.innerWidth - e.clientX - 16)
+        Math.max(MIN_TOC_WIDTH, window.innerWidth - e.clientX - 16),
       );
       tocWidth.value = newWidth;
     };
@@ -122,8 +132,8 @@ export function TableOfContents({
   const minLevel = Math.min(...headings.map((h) => h.level));
 
   // Render TOC list (shared between desktop and mobile)
-  const renderTocList = () => (
-    <ul class='toc-list'>
+  const renderTocList = (withRef = false) => (
+    <ul class='toc-list' ref={withRef ? tocListRef : undefined}>
       {headings.map((heading) => (
         <li
           key={heading.id}
@@ -171,7 +181,7 @@ export function TableOfContents({
           </div>
 
           {/* TOC list */}
-          {renderTocList()}
+          {renderTocList(true)}
         </nav>
       )}
 

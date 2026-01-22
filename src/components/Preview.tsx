@@ -221,7 +221,7 @@ export function Preview() {
         {/* Content */}
         {mode === 'preview' ? (
           <div
-            class='flex-1 overflow-y-auto px-4 py-4 scrollbar-hide transition-all duration-200'
+            class='flex-1 overflow-y-auto px-4 py-4 transition-all duration-200'
             style={{
               paddingRight: isTocOpen ? `${currentTocWidth + 32}px` : undefined,
             }}

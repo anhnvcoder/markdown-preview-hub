@@ -21,15 +21,17 @@ import {
   errorMessage,
   expandedFolders,
   files,
+  handleDroppedFiles,
   openFolder,
   refreshFiles,
+  reorderRootFolders,
   selectedNodeId,
   selectFile,
   selectNode,
   toggleFolder,
 } from '../stores/file-store';
 import type { VirtualFile } from '../types';
-import { inlineCreating } from './Sidebar';
+import { draggingFolderId, inlineCreating } from './Sidebar';
 import { StatusIcon } from './StatusIcon';
 
 interface TreeNode extends VirtualFile {
@@ -160,13 +162,138 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(node.virtualName);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isReorderTarget, setIsReorderTarget] = useState(false);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = activeFileId.value === node.id;
   const isSelected = selectedNodeId.value === node.id;
   const isExpanded = expandedFolders.value.has(node.id);
   const isFolder = node.type === 'folder';
+  const isRootFolder = isFolder && !node.path.includes('/');
   const paddingLeft = `${depth * 12 + 8}px`;
+
+  // Check if a root folder is being dragged (for reorder indicator)
+  const currentDraggingId = draggingFolderId.value;
+  const isBeingDragged = currentDraggingId === node.id;
+
+  // Drag handlers for root folder reordering
+  const handleDragStart = (e: DragEvent) => {
+    if (!isRootFolder) return;
+    e.stopPropagation();
+    draggingFolderId.value = node.id;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', node.id);
+
+      // Create custom drag image with proper styling for both themes
+      const dragEl = document.createElement('div');
+      dragEl.textContent = node.virtualName;
+      dragEl.style.cssText = `
+        padding: 6px 12px;
+        background: var(--sidebar);
+        color: var(--foreground);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        position: absolute;
+        top: -1000px;
+        left: -1000px;
+        white-space: nowrap;
+      `;
+      document.body.appendChild(dragEl);
+      e.dataTransfer.setDragImage(dragEl, 0, 0);
+      // Remove after a short delay
+      setTimeout(() => document.body.removeChild(dragEl), 0);
+    }
+  };
+
+  const handleDragEnd = () => {
+    draggingFolderId.value = null;
+    setIsReorderTarget(false);
+  };
+
+  // Drag-drop handlers for folders (file upload + reorder)
+  const handleFolderDragOver = (e: DragEvent) => {
+    // Only handle if this is a folder
+    if (!isFolder) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Get fresh value from signal
+    const dragId = draggingFolderId.value;
+
+    // Set drop effect to show correct cursor
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = dragId ? 'move' : 'copy';
+    }
+
+    // Check if it's an internal folder drag (reorder)
+    if (dragId && isRootFolder && dragId !== node.id) {
+      setIsReorderTarget(true);
+      setIsDragOver(false);
+      return;
+    }
+
+    // External file drop - only highlight this specific folder
+    if (e.dataTransfer?.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleFolderDragLeave = (e: DragEvent) => {
+    if (!isFolder) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Only reset if actually leaving this element (not entering a child)
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    const currentTarget = e.currentTarget as HTMLElement;
+    if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+      setIsDragOver(false);
+      setIsReorderTarget(false);
+    }
+  };
+
+  const handleFolderDrop = async (e: DragEvent) => {
+    // Only handle if this is a folder
+    if (!isFolder) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Always reset state first
+    setIsDragOver(false);
+    setIsReorderTarget(false);
+
+    if (!e.dataTransfer) return;
+
+    // Get fresh value from signal (don't use stale captured value)
+    const dragId = draggingFolderId.value;
+
+    // Check if it's an internal folder reorder
+    if (dragId && isRootFolder && dragId !== node.id) {
+      reorderRootFolders(dragId, node.id);
+      draggingFolderId.value = null;
+      return;
+    }
+
+    // External file drop into folder - already checked isFolder above
+
+    // Auto-expand folder when dropping into it
+    if (!expandedFolders.value.has(node.id)) {
+      toggleFolder(node.id);
+    }
+
+    const result = await handleDroppedFiles(e.dataTransfer, node.id);
+    if (result.firstFileId) {
+      selectNode(result.firstFileId);
+      await selectFile(result.firstFileId);
+    }
+  };
 
   // Focus rename input when renaming starts
   useEffect(() => {
@@ -241,7 +368,7 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
         files.value.some(
           (f) =>
             f.path ===
-            (parentPath ? `${parentPath}/${duplicateName}` : duplicateName)
+            (parentPath ? `${parentPath}/${duplicateName}` : duplicateName),
         )
       ) {
         counter++;
@@ -319,7 +446,7 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
     e.stopPropagation();
     setShowMenu(false);
     const proceed = confirm(
-      `Sync "${node.virtualName}" from disk?\n\nThis will replace all local changes in this folder with disk content.`
+      `Sync "${node.virtualName}" from disk?\n\nThis will replace all local changes in this folder with disk content.`,
     );
     if (!proceed) return;
     try {
@@ -327,14 +454,14 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
       if (result.needReopen) {
         // Need to reopen folder to get permission
         const reopen = confirm(
-          `Folder access lost after page refresh.\n\nPlease reopen the folder "${result.needReopen}" to restore access.\n\n(Select the exact folder when the picker opens)`
+          `Folder access lost after page refresh.\n\nPlease reopen the folder "${result.needReopen}" to restore access.\n\n(Select the exact folder when the picker opens)`,
         );
         if (reopen) {
           await openFolder();
         }
       } else if (!result.success) {
         alert(
-          'Failed to sync folder. The folder may have been moved or renamed.'
+          'Failed to sync folder. The folder may have been moved or renamed.',
         );
       }
     } catch (err) {
@@ -349,14 +476,24 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
           isSelected || isActive
             ? 'bg-[var(--sidebar-accent)] text-foreground'
             : 'hover:bg-[var(--sidebar-accent)] text-muted-foreground hover:text-foreground'
-        }`}
+        } ${isDragOver && isFolder ? 'ring-2 ring-primary' : ''}
+        ${isBeingDragged ? 'opacity-60 bg-[var(--sidebar)] text-foreground' : ''}
+        ${isReorderTarget ? 'border-t-2 border-t-primary' : ''}`}
         style={{ paddingLeft }}
+        draggable={isRootFolder}
+        data-file-item='true'
+        data-folder-drop-target={isFolder ? 'true' : undefined}
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => {
           setIsHovered(false);
           setShowMenu(false);
         }}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleFolderDragOver}
+        onDragLeave={handleFolderDragLeave}
+        onDrop={handleFolderDrop}
       >
         {/* Active indicator bar - GitHub style */}
         {isActive && (

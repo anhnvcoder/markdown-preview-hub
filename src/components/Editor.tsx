@@ -35,10 +35,11 @@ export function Editor({
   const [savingToDisk, setSavingToDisk] = useState(false);
   const file = activeFile.value;
 
-  // Update content when file changes
+  // Update content only when switching to a different file
+  // Don't reset on initialContent change to prevent cursor jumping during auto-save
   useEffect(() => {
     setContent(initialContent);
-  }, [fileId, initialContent]);
+  }, [fileId]);
 
   // Auto-save with debounce
   useEffect(() => {
@@ -72,7 +73,7 @@ export function Editor({
       // Update global content for live preview
       activeFileContent.value = value;
     },
-    [onContentChange]
+    [onContentChange],
   );
 
   // Manual save to DB

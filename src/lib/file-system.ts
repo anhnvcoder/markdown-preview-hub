@@ -67,7 +67,7 @@ export function isFileSystemSupported(): boolean {
  */
 export async function verifyPermission(
   handle: FileSystemDirectoryHandle,
-  mode: 'read' | 'readwrite' = 'readwrite'
+  mode: 'read' | 'readwrite' = 'readwrite',
 ): Promise<boolean> {
   try {
     // @ts-ignore
@@ -87,7 +87,7 @@ export async function verifyPermission(
  */
 export async function hasFilePermission(
   handle: FileSystemFileHandle,
-  mode: 'read' | 'readwrite' = 'read'
+  mode: 'read' | 'readwrite' = 'read',
 ): Promise<boolean> {
   try {
     // @ts-ignore
@@ -103,7 +103,7 @@ export async function hasFilePermission(
  */
 export async function requestFilePermission(
   handle: FileSystemFileHandle,
-  mode: 'read' | 'readwrite' = 'read'
+  mode: 'read' | 'readwrite' = 'read',
 ): Promise<boolean> {
   try {
     // @ts-ignore
@@ -124,7 +124,7 @@ export async function requestFilePermission(
 export async function scanDirectory(
   dirHandle: FileSystemDirectoryHandle,
   projectId: string,
-  config?: Partial<ScanConfig>
+  config?: Partial<ScanConfig>,
 ): Promise<VirtualFile[]> {
   const settings = await getSettings();
   const scanConfig: ScanConfig = {
@@ -140,7 +140,7 @@ export async function scanDirectory(
   async function scan(
     handle: FileSystemDirectoryHandle,
     path: string,
-    depth: number
+    depth: number,
   ): Promise<void> {
     // Safety checks
     if (depth > scanConfig.maxDepth) {
@@ -243,7 +243,7 @@ export async function scanDirectory(
         currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
         // Find folder with this path
         const folder = files.find(
-          (dir) => dir.path === currentPath && dir.type === 'folder'
+          (dir) => dir.path === currentPath && dir.type === 'folder',
         );
         if (folder) allowedIds.add(folder.id);
       }
@@ -258,7 +258,7 @@ export async function scanDirectory(
  * Read file content from handle
  */
 export async function readFileContent(
-  handle: FileSystemFileHandle
+  handle: FileSystemFileHandle,
 ): Promise<string> {
   const file = await handle.getFile();
   return file.text();
@@ -269,7 +269,7 @@ export async function readFileContent(
  */
 export async function writeFileContent(
   handle: FileSystemFileHandle,
-  content: string
+  content: string,
 ): Promise<number> {
   // @ts-ignore
   const writable = await handle.createWritable();
@@ -322,6 +322,131 @@ export async function openFilePicker(): Promise<File[]> {
   } catch {
     // User cancelled
     return [];
+  }
+}
+
+/**
+ * Process dropped files from DataTransfer
+ * Returns array of markdown files with their content
+ * Filters out folders that don't contain any md files
+ */
+export async function processDroppedFiles(
+  dataTransfer: DataTransfer,
+): Promise<{ name: string; content: string; isFolder: boolean }[]> {
+  const results: { name: string; content: string; isFolder: boolean }[] = [];
+  const items = dataTransfer.items;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+
+    // Try to get FileSystemHandle (modern browsers)
+    // @ts-ignore - webkitGetAsEntry is non-standard
+    const entry = item.webkitGetAsEntry?.();
+
+    if (entry) {
+      await processEntry(entry, '', results);
+    } else if (item.kind === 'file') {
+      // Fallback: use File API directly
+      const file = item.getAsFile();
+      if (
+        file &&
+        isAllowedFile(file.name, DEFAULT_SCAN_CONFIG.allowedExtensions)
+      ) {
+        const content = await file.text();
+        results.push({ name: file.name, content, isFolder: false });
+      }
+    }
+  }
+
+  // Filter out folders that don't contain any md files
+  return filterEmptyFolders(results);
+}
+
+/**
+ * Filter out folders that don't have any md file descendants
+ */
+function filterEmptyFolders(
+  items: { name: string; content: string; isFolder: boolean }[],
+): { name: string; content: string; isFolder: boolean }[] {
+  // Get all file paths
+  const filePaths = new Set(
+    items.filter((item) => !item.isFolder).map((item) => item.name),
+  );
+
+  // Find folders that have md file descendants
+  const foldersWithFiles = new Set<string>();
+  for (const filePath of filePaths) {
+    const parts = filePath.split('/');
+    let currentPath = '';
+    for (let i = 0; i < parts.length - 1; i++) {
+      currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
+      foldersWithFiles.add(currentPath);
+    }
+  }
+
+  // Filter: keep all files and only folders that have md descendants
+  return items.filter(
+    (item) => !item.isFolder || foldersWithFiles.has(item.name),
+  );
+}
+
+/**
+ * Recursively process a FileSystemEntry from drag-drop
+ */
+async function processEntry(
+  entry: FileSystemEntry,
+  parentPath: string,
+  results: { name: string; content: string; isFolder: boolean }[],
+): Promise<void> {
+  const fullPath = parentPath ? `${parentPath}/${entry.name}` : entry.name;
+
+  if (entry.isDirectory) {
+    // Skip ignored folders
+    if (isIgnoredFolder(entry.name, DEFAULT_SCAN_CONFIG.ignoredFolders)) {
+      return;
+    }
+
+    // Add folder marker
+    results.push({ name: fullPath, content: '', isFolder: true });
+
+    // Read directory contents
+    const dirEntry = entry as FileSystemDirectoryEntry;
+    const reader = dirEntry.createReader();
+
+    const entries = await new Promise<FileSystemEntry[]>((resolve) => {
+      const allEntries: FileSystemEntry[] = [];
+      const readBatch = () => {
+        reader.readEntries((batch) => {
+          if (batch.length === 0) {
+            resolve(allEntries);
+          } else {
+            allEntries.push(...batch);
+            readBatch();
+          }
+        });
+      };
+      readBatch();
+    });
+
+    // Process each entry recursively
+    for (const childEntry of entries) {
+      await processEntry(childEntry, fullPath, results);
+    }
+  } else if (entry.isFile) {
+    const fileEntry = entry as FileSystemFileEntry;
+
+    // Only process markdown files
+    if (!isAllowedFile(entry.name, DEFAULT_SCAN_CONFIG.allowedExtensions)) {
+      return;
+    }
+
+    // Read file content
+    const file = await new Promise<File>((resolve, reject) => {
+      fileEntry.file(resolve, reject);
+    });
+
+    const content = await file.text();
+    results.push({ name: fullPath, content, isFolder: false });
   }
 }
 

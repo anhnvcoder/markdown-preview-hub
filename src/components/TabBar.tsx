@@ -28,10 +28,23 @@ export function TabBar() {
   useEffect(() => {
     checkScroll();
     const el = scrollRef.current;
-    el?.addEventListener('scroll', checkScroll);
+    if (!el) return;
+
+    el.addEventListener('scroll', checkScroll);
     window.addEventListener('resize', checkScroll);
+
+    // Handle mouse wheel to scroll horizontally
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+
     return () => {
-      el?.removeEventListener('scroll', checkScroll);
+      el.removeEventListener('scroll', checkScroll);
+      el.removeEventListener('wheel', handleWheel);
       window.removeEventListener('resize', checkScroll);
     };
   }, [tabs.length]);
@@ -48,7 +61,7 @@ export function TabBar() {
       {/* Tabs container */}
       <div
         ref={scrollRef}
-        class='flex items-center overflow-x-auto scrollbar-hide h-full flex-1'
+        class='flex items-center overflow-x-auto h-full flex-1 tabbar-scroll'
       >
         {tabs.map((file) => {
           const isActive = file.id === activeId;
@@ -63,6 +76,13 @@ export function TabBar() {
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
               }`}
               onClick={() => selectFile(file.id)}
+              onAuxClick={(e) => {
+                // Middle mouse button click to close tab
+                if (e.button === 1) {
+                  e.preventDefault();
+                  closeTab(file.id);
+                }
+              }}
             >
               {/* Dirty indicator */}
               {isDirty && (

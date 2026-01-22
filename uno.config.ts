@@ -25,7 +25,9 @@ export default defineConfig({
     'i-lucide-copy', 'i-lucide-file-plus', 'i-lucide-folder-plus',
     'i-lucide-more-vertical', 'i-lucide-trash-2',
     'i-lucide-panel-left-close', 'i-lucide-panel-left-open',
-    'i-lucide-x',
+    'i-lucide-x', 'i-lucide-share-2', 'i-lucide-link',
+    'i-lucide-check-circle', 'i-lucide-x-circle', 'i-lucide-external-link',
+    'i-lucide-file-x2', 'i-lucide-list',
   ],
   theme: {
     colors: {
@@ -76,5 +78,8 @@ export default defineConfig({
     'modal-content': 'w-full max-w-lg bg-card border border-border rounded-xl shadow-2xl overflow-hidden',
     'modal-header': 'flex items-center justify-between px-4 py-3 border-b border-border',
     'modal-body': 'p-4',
+
+    // Form elements
+    'input': 'bg-input border border-border rounded-md px-3 py-1.5 text-foreground outline-none focus:ring-1 focus:ring-primary',
   },
 })

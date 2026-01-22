@@ -53,4 +53,5 @@ export interface AppSettings {
   directoryScanInterval: number; // ms - for new file detection (default 60000)
   ignoredFolders: string[];
   showToc: boolean; // Show Table of Contents panel (default false)
+  shareExpiryDays: number; // Days until share links expire (default 7)
 }

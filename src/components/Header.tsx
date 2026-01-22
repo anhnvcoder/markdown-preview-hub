@@ -1,6 +1,6 @@
 /**
  * Header component
- * Logo, search, open folder, theme toggle
+ * Logo, search, theme toggle, settings
  */
 import { saveSettings } from '../lib/database';
 import { isSearchOpen, modKey, openSettings } from '../lib/keyboard';

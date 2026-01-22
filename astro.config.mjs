@@ -3,9 +3,11 @@ import { defineConfig } from 'astro/config';
 import preact from '@astrojs/preact';
 import UnoCSS from 'unocss/astro';
 import AstroPWA from '@vite-pwa/astro';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
+  adapter: vercel(),
   integrations: [
     preact({ compat: true }),
     UnoCSS({ injectReset: true }),

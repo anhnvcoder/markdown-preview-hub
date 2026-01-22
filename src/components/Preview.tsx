@@ -20,6 +20,7 @@ import { sidebarCollapsed, viewMode } from './App';
 import { Editor } from './Editor';
 import { EmptyState } from './EmptyState';
 import { MarkdownPreview } from './MarkdownPreview';
+import { ShareButton } from './ShareButton';
 
 export function Preview() {
   const file = activeFile.value;
@@ -46,7 +47,7 @@ export function Preview() {
           // If null, permission is lost - skip status update (user needs to reconnect)
           if (diskContent === null) {
             console.warn(
-              '[Preview] Permission lost - cannot compare with disk'
+              '[Preview] Permission lost - cannot compare with disk',
             );
             return;
           }
@@ -81,7 +82,7 @@ export function Preview() {
   // Handle internal .md link click - open file in new tab
   const handleInternalLinkClick = (filePath: string) => {
     const targetFile = files.value.find(
-      (f) => f.path === filePath && f.type === 'file'
+      (f) => f.path === filePath && f.type === 'file',
     );
     if (targetFile) {
       openTab(targetFile.id);
@@ -199,6 +200,7 @@ export function Preview() {
                 <div class='i-lucide-list w-4 h-4' />
               </button>
             )}
+            <ShareButton />
           </div>
         </div>
 

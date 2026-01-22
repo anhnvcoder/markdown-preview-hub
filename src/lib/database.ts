@@ -112,7 +112,7 @@ export async function getFile(id: string): Promise<VirtualFile | undefined> {
 }
 
 export async function getFileByPath(
-  path: string
+  path: string,
 ): Promise<VirtualFile | undefined> {
   const db = await getDB();
   return db.getFromIndex('files', 'by-path', path);
@@ -124,7 +124,7 @@ export async function getAllFiles(): Promise<VirtualFile[]> {
 }
 
 export async function getFilesByProject(
-  projectId: string
+  projectId: string,
 ): Promise<VirtualFile[]> {
   const db = await getDB();
   return db.getAllFromIndex('files', 'by-project', projectId);
@@ -137,7 +137,7 @@ export async function getFilesByStatus(status: string): Promise<VirtualFile[]> {
 
 export async function updateFile(
   id: string,
-  updates: Partial<VirtualFile>
+  updates: Partial<VirtualFile>,
 ): Promise<void> {
   const db = await getDB();
   const file = await db.get('files', id);
@@ -221,6 +221,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     '.parcel-cache',
   ],
   showToc: false, // Default OFF - users enable if needed
+  shareExpiryDays: 7, // Default 7 days for share links
 };
 
 export async function getSettings(): Promise<AppSettings> {
@@ -230,7 +231,7 @@ export async function getSettings(): Promise<AppSettings> {
 }
 
 export async function saveSettings(
-  settings: Partial<AppSettings>
+  settings: Partial<AppSettings>,
 ): Promise<void> {
   const db = await getDB();
   const current = await getSettings();

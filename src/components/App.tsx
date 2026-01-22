@@ -30,6 +30,7 @@ import { ConflictModal } from './ConflictModal';
 import { Header } from './Header';
 import { Preview } from './Preview';
 import { SettingsModal } from './SettingsModal';
+import { ShareModal } from './ShareButton';
 import { Sidebar } from './Sidebar';
 import { StatusBar } from './StatusBar';
 import { TabBar } from './TabBar';
@@ -50,9 +51,9 @@ export const sidebarWidth = signal<number>(
     ? parseInt(
         localStorage.getItem('md-preview-sidebar-width') ||
           String(DEFAULT_SIDEBAR_WIDTH),
-        10
+        10,
       )
-    : DEFAULT_SIDEBAR_WIDTH
+    : DEFAULT_SIDEBAR_WIDTH,
 );
 
 // Helper to toggle sidebar
@@ -103,7 +104,7 @@ export function App() {
       if (!isResizingRef.current) return;
       const newWidth = Math.min(
         MAX_SIDEBAR_WIDTH,
-        Math.max(MIN_SIDEBAR_WIDTH, e.clientX)
+        Math.max(MIN_SIDEBAR_WIDTH, e.clientX),
       );
       sidebarWidth.value = newWidth;
     };
@@ -117,7 +118,7 @@ export function App() {
       // Persist to localStorage
       localStorage.setItem(
         'md-preview-sidebar-width',
-        String(sidebarWidth.value)
+        String(sidebarWidth.value),
       );
     };
 
@@ -229,6 +230,7 @@ export function App() {
       <StatusBar />
       <ConflictModal />
       <SettingsModal />
+      <ShareModal />
       <UploadWarningModal />
       <CommandPalette />
     </>

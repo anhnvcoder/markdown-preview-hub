@@ -74,6 +74,15 @@ const INTERVAL_OPTIONS = [
   { label: '5 minutes', value: 300000 },
 ];
 
+// Share expiry options (days)
+const SHARE_EXPIRY_OPTIONS = [
+  { label: '1 day', value: 1 },
+  { label: '3 days', value: 3 },
+  { label: '7 days', value: 7 },
+  { label: '14 days', value: 14 },
+  { label: '30 days', value: 30 },
+];
+
 export function SettingsModal() {
   const isOpen = isSettingsOpen.value;
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -99,7 +108,7 @@ export function SettingsModal() {
     let appliedTheme = theme;
     if (theme === 'system') {
       const prefersDark = window.matchMedia(
-        '(prefers-color-scheme: dark)'
+        '(prefers-color-scheme: dark)',
       ).matches;
       appliedTheme = prefersDark ? 'dark' : 'light';
     }
@@ -116,6 +125,11 @@ export function SettingsModal() {
 
   const handleIgnoredChange = (e: Event) => {
     setIgnoredText((e.target as HTMLTextAreaElement).value);
+  };
+
+  const handleShareExpiryChange = async (days: number) => {
+    await saveSettings({ shareExpiryDays: days });
+    setSettings({ ...settings, shareExpiryDays: days });
   };
 
   // Auto-save ignored folders on blur
@@ -136,6 +150,7 @@ export function SettingsModal() {
       pollingActiveInterval: 30000,
       directoryScanInterval: 60000,
       ignoredFolders: DEFAULT_IGNORED,
+      shareExpiryDays: 7,
     });
     setSettings({
       theme: 'light',
@@ -143,6 +158,7 @@ export function SettingsModal() {
       directoryScanInterval: 60000,
       ignoredFolders: DEFAULT_IGNORED,
       showToc: false,
+      shareExpiryDays: 7,
     });
     setIgnoredText(DEFAULT_IGNORED.join(', '));
     document.documentElement.className = 'light';
@@ -210,6 +226,31 @@ export function SettingsModal() {
             <p class='text-xs text-muted-foreground mt-2'>
               Directory scan: every 60s | Tab focus: instant sync
             </p>
+          </div>
+
+          {/* Share Link Expiry */}
+          <div>
+            <label class='block text-sm font-medium mb-2'>
+              Share Link Expiry
+            </label>
+            <p class='text-xs text-muted-foreground mb-3'>
+              How long shared links remain accessible
+            </p>
+            <div class='flex flex-wrap gap-2'>
+              {SHARE_EXPIRY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  class={`px-3 py-1.5 rounded text-sm ${
+                    settings.shareExpiryDays === opt.value
+                      ? 'bg-primary text-white'
+                      : 'bg-muted hover:bg-muted/80'
+                  }`}
+                  onClick={() => handleShareExpiryChange(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Ignored folders */}

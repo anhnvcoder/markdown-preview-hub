@@ -17,6 +17,7 @@ import {
 } from '../stores/file-store';
 import { currentTheme, tocWidth } from '../stores/theme-store';
 import { sidebarCollapsed, viewMode } from './App';
+import { CopyDropdown } from './CopyDropdown';
 import { Editor } from './Editor';
 import { EmptyState } from './EmptyState';
 import { MarkdownPreview } from './MarkdownPreview';
@@ -199,6 +200,9 @@ export function Preview() {
               >
                 <div class='i-lucide-list w-4 h-4' />
               </button>
+            )}
+            {mode === 'preview' && (
+              <CopyDropdown content={content} filename={file.virtualName} />
             )}
             <ShareButton />
           </div>

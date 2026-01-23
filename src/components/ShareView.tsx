@@ -3,6 +3,7 @@
  * Read-only view for shared markdown content
  */
 import { useEffect, useState } from 'preact/hooks';
+import { CopyDropdown } from './CopyDropdown';
 import { MarkdownPreview } from './MarkdownPreview';
 
 interface ShareViewProps {
@@ -90,6 +91,9 @@ export function ShareView({
               <div class='i-lucide-sun w-4 h-4 dark:hidden' />
               <div class='i-lucide-moon w-4 h-4 hidden dark:block' />
             </button>
+
+            {/* Copy dropdown */}
+            <CopyDropdown content={content} filename={title} />
 
             {/* Copy link */}
             <button

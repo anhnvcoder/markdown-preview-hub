@@ -4,12 +4,12 @@
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { processImages, reloadImages } from '../lib/image-loader';
-import { currentProject } from '../stores/file-store';
 import {
   preloadHighlighter,
   renderMarkdown,
   type TocHeading,
 } from '../lib/markdown';
+import { currentProject } from '../stores/file-store';
 import { TableOfContents } from './TableOfContents';
 
 interface MarkdownPreviewProps {
@@ -110,7 +110,7 @@ export function MarkdownPreview({
     const handleLinkClick = (e: Event) => {
       const target = e.target as HTMLElement;
       const link = target.closest(
-        'a[data-internal-link]'
+        'a[data-internal-link]',
       ) as HTMLAnchorElement | null;
 
       if (link) {
@@ -187,7 +187,7 @@ export function MarkdownPreview({
           const code = el.dataset.mermaid;
           const diagramEl = el.querySelector('.mermaid-diagram') as HTMLElement;
           const fallbackEl = el.querySelector(
-            '.mermaid-fallback'
+            '.mermaid-fallback',
           ) as HTMLElement;
 
           if (!code || !diagramEl) continue;
@@ -203,8 +203,27 @@ export function MarkdownPreview({
             console.warn('[Mermaid] Render error:', err);
             diagramEl.style.display = 'none';
             if (fallbackEl) fallbackEl.style.display = 'block';
+
+            // Clean up mermaid error containers that get appended to body
+            document
+              .querySelectorAll('[id^="dmermaid-"], [id^="d"][id*="mermaid"]')
+              .forEach((el) => {
+                el.remove();
+              });
           }
         }
+
+        // Final cleanup: remove any stray mermaid error containers
+        document
+          .querySelectorAll('[id^="dmermaid-"], [id^="d"][id*="mermaid"]')
+          .forEach((el) => {
+            if (
+              el.querySelector('.error-icon') ||
+              el.textContent?.includes('Syntax error')
+            ) {
+              el.remove();
+            }
+          });
       } catch (err) {
         console.error('[Mermaid] Import error:', err);
       }
@@ -269,7 +288,7 @@ export function MarkdownPreview({
           const otherCellsEmpty = Array.from(cells)
             .slice(1)
             .every(
-              (c) => !c.textContent?.trim() || c.textContent?.trim() === '-'
+              (c) => !c.textContent?.trim() || c.textContent?.trim() === '-',
             );
 
           if (

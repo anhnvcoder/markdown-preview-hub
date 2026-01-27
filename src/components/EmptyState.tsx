@@ -2,6 +2,7 @@
  * EmptyState component
  * Welcome screen with recent projects and quick tips
  */
+import { openHelp } from '../lib/keyboard';
 
 interface RecentProject {
   name: string;
@@ -52,6 +53,15 @@ export function EmptyState() {
         <div class='text-center text-sm text-muted-foreground pt-4'>
           <p>
             Open the sidebar menu (+) to start a new project or import files
+          </p>
+          <p class='mt-2'>
+            <button
+              class='inline-flex items-center gap-1.5 text-primary hover:underline'
+              onClick={openHelp}
+            >
+              <div class='i-lucide-help-circle w-4 h-4' />
+              New here? Click for a quick guide
+            </button>
           </p>
         </div>
 

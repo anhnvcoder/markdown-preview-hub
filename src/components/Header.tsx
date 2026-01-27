@@ -3,7 +3,7 @@
  * Logo, search, theme toggle, settings
  */
 import { saveSettings } from '../lib/database';
-import { isSearchOpen, modKey, openSettings } from '../lib/keyboard';
+import { isSearchOpen, modKey, openHelp, openSettings } from '../lib/keyboard';
 import { isLoading, openFolder } from '../stores/file-store';
 import { sidebarCollapsed, toggleSidebar } from './App';
 
@@ -78,6 +78,10 @@ export function Header() {
         >
           <div class='i-lucide-sun w-4 h-4 dark:hidden' />
           <div class='i-lucide-moon w-4 h-4 hidden dark:block' />
+        </button>
+
+        <button class='btn-icon' aria-label='Help' onClick={openHelp} title='Help & Guide'>
+          <div class='i-lucide-help-circle w-4 h-4' />
         </button>
 
         <button class='btn-icon' aria-label='Settings' onClick={openSettings}>

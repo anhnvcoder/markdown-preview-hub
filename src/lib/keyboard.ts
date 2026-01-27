@@ -8,6 +8,7 @@ import { signal } from '@preact/signals';
 export const isSearchOpen = signal(false);
 export const isContentSearchOpen = signal(false);
 export const isSettingsOpen = signal(false);
+export const isHelpOpen = signal(false);
 
 /**
  * Detect if user is on macOS
@@ -102,6 +103,10 @@ export function initKeyboardShortcuts(callbacks: {
         isSettingsOpen.value = false;
         return;
       }
+      if (isHelpOpen.value) {
+        isHelpOpen.value = false;
+        return;
+      }
     }
   };
 
@@ -118,4 +123,15 @@ export function openSettings(): void {
 
 export function closeSettings(): void {
   isSettingsOpen.value = false;
+}
+
+/**
+ * Toggle help modal
+ */
+export function openHelp(): void {
+  isHelpOpen.value = true;
+}
+
+export function closeHelp(): void {
+  isHelpOpen.value = false;
 }

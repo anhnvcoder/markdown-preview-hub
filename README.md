@@ -14,6 +14,11 @@ A modern, offline-first markdown preview application built with Astro, Preact, a
 - **Code Highlighting** - 100+ language support via Shiki
 - **File Tabs** - Multi-file editing with tab management
 - **Auto-Sync** - Automatic file change detection and sync
+- **Mermaid Diagrams** - Render flowcharts, sequence diagrams, and more
+- **Share Links** - Create public share links with configurable expiry (1-30 days)
+- **Copy & Download** - Copy markdown to clipboard, download as .md or export as PDF
+- **Quick Search** - Search files by name or content with folder filters
+- **Help Guide** - Built-in user guide for new users
 
 ## Tech Stack
 
@@ -78,6 +83,7 @@ See [docs/](./docs/) for detailed technical documentation:
 - [Architecture Overview](./docs/architecture.md)
 - [File System & Sync](./docs/file-system.md)
 - [Features Guide](./docs/features.md)
+- [Share Feature](./docs/share-feature.md)
 
 ## Browser Support
 

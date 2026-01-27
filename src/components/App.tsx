@@ -28,6 +28,7 @@ import { initTheme } from '../stores/theme-store';
 import { CommandPalette } from './CommandPalette';
 import { ConflictModal } from './ConflictModal';
 import { Header } from './Header';
+import { HelpModal } from './HelpModal';
 import { Preview } from './Preview';
 import { SettingsModal } from './SettingsModal';
 import { ShareModal } from './ShareButton';
@@ -231,6 +232,7 @@ export function App() {
       <ConflictModal />
       <SettingsModal />
       <ShareModal />
+      <HelpModal />
       <UploadWarningModal />
       <CommandPalette />
     </>

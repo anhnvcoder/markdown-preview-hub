@@ -16,10 +16,16 @@ export interface TocHeading {
   level: number;
 }
 
+/** Parsed frontmatter data */
+export interface FrontmatterData {
+  [key: string]: unknown;
+}
+
 /** Render result with html and TOC headings */
 export interface RenderResult {
   html: string;
   headings: TocHeading[];
+  frontmatter?: FrontmatterData;
 }
 
 // Lazy-loaded highlighter instance
@@ -352,11 +358,14 @@ export async function renderMarkdown(
   const hl = await getHighlighter();
   const md = getMarkdownIt(theme, hl);
 
+  // Strip YAML frontmatter
+  const { content: markdownContent, frontmatter } = parseFrontmatter(content);
+
   // Environment for renderer (used by link resolver)
   const env: MdEnv = { currentFilePath };
 
   // Parse tokens to extract headings
-  const tokens = md.parse(content, env);
+  const tokens = md.parse(markdownContent, env);
   const headings: TocHeading[] = [];
   const usedIds = new Set<string>();
 
@@ -380,7 +389,7 @@ export async function renderMarkdown(
   // Render with injected IDs and env for link resolution
   const html = md.renderer.render(tokens, md.options, env);
 
-  return { html, headings };
+  return { html, headings, frontmatter };
 }
 
 /**
@@ -391,6 +400,62 @@ export function preloadHighlighter(): void {
 }
 
 // ============ Helpers ============
+
+/**
+ * Parse and strip YAML frontmatter from markdown content
+ * Frontmatter is delimited by --- at the start of the file
+ */
+function parseFrontmatter(content: string): {
+  content: string;
+  frontmatter?: FrontmatterData;
+} {
+  // Check if content starts with ---
+  if (!content.startsWith('---')) {
+    return { content };
+  }
+
+  // Find the closing ---
+  const endMatch = content.indexOf('\n---', 3);
+  if (endMatch === -1) {
+    return { content };
+  }
+
+  // Extract frontmatter YAML (between the --- delimiters)
+  const frontmatterStr = content.slice(4, endMatch).trim();
+
+  // Parse simple YAML (key: value pairs)
+  const frontmatter: FrontmatterData = {};
+  for (const line of frontmatterStr.split('\n')) {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx > 0) {
+      const key = line.slice(0, colonIdx).trim();
+      let value: unknown = line.slice(colonIdx + 1).trim();
+
+      // Parse arrays [a, b, c]
+      if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
+        value = value
+          .slice(1, -1)
+          .split(',')
+          .map((s) => s.trim());
+      }
+      // Remove quotes
+      else if (
+        typeof value === 'string' &&
+        ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'")))
+      ) {
+        value = value.slice(1, -1);
+      }
+
+      frontmatter[key] = value;
+    }
+  }
+
+  // Return content without frontmatter (skip the closing --- and newline)
+  const strippedContent = content.slice(endMatch + 4).replace(/^\n+/, '');
+
+  return { content: strippedContent, frontmatter };
+}
 
 /**
  * Convert text to URL-friendly slug for heading IDs

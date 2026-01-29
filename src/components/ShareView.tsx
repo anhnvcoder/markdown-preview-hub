@@ -3,6 +3,7 @@
  * Read-only view for shared markdown content
  */
 import { useEffect, useState } from 'preact/hooks';
+import { tocWidth } from '../stores/theme-store';
 import { CopyDropdown } from './CopyDropdown';
 import { MarkdownPreview } from './MarkdownPreview';
 
@@ -72,9 +73,9 @@ export function ShareView({
           </div>
 
           <div class='flex items-center gap-2'>
-            {/* TOC toggle */}
+            {/* TOC toggle - hidden on mobile/tablet where FAB is shown (≤1024px) */}
             <button
-              class='btn-icon'
+              class='btn-icon toc-header-btn'
               onClick={() => setIsTocOpen(!isTocOpen)}
               aria-label='Toggle table of contents'
               title='Table of contents'
@@ -112,7 +113,11 @@ export function ShareView({
 
       {/* Content */}
       <main class='flex-1 overflow-auto'>
-        <div class='max-w-4xl mx-auto px-4 py-8'>
+        <div
+          class='max-w-4xl mx-auto px-4 py-8 toc-content-shift'
+          data-toc-open={isTocOpen}
+          style={{ '--toc-width': `${tocWidth.value}px` } as any}
+        >
           <MarkdownPreview
             content={content}
             theme={theme}

@@ -229,6 +229,9 @@
   .toc-fab {
     display: flex;
   }
+  .toc-header-btn {
+    display: none !important;
+  }
 }
 
 @media (min-width: 1025px) {
@@ -238,4 +241,23 @@
   .toc-drawer-overlay {
     display: none;
   }
+  .toc-header-btn {
+    display: flex;
+  }
 }
+
+/* ============ Content padding when TOC is open ============ */
+/* Only add padding on medium screens where TOC might overlap content */
+.toc-content-shift {
+  transition: padding-right 0.2s ease;
+}
+
+/* Medium screens (1025px-1400px): TOC overlaps content, add small padding */
+@media (min-width: 1025px) and (max-width: 1400px) {
+  .toc-content-shift[data-toc-open='true'] {
+    /* Small padding - just enough to clear TOC overlap */
+    padding-right: calc(var(--toc-width, 220px) / 2);
+  }
+}
+
+/* Large screens (>1400px): No overlap, no padding needed */

@@ -14,6 +14,7 @@ interface TableOfContentsProps {
   containerRef: RefObject<HTMLDivElement>;
   isDesktopOpen?: boolean;
   onClose?: () => void;
+  hideFloatingButton?: boolean;
 }
 
 export function TableOfContents({
@@ -21,6 +22,7 @@ export function TableOfContents({
   containerRef,
   isDesktopOpen = false,
   onClose,
+  hideFloatingButton = false,
 }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -186,13 +188,15 @@ export function TableOfContents({
       )}
 
       {/* Mobile FAB - shown only on mobile */}
-      <button
-        class='toc-fab'
-        onClick={() => setIsMobileOpen(true)}
-        aria-label='Open table of contents'
-      >
-        <div class='i-lucide-list w-5 h-5' />
-      </button>
+      {!hideFloatingButton && (
+        <button
+          class='toc-fab'
+          onClick={() => setIsMobileOpen(true)}
+          aria-label='Open table of contents'
+        >
+          <div class='i-lucide-list w-5 h-5' />
+        </button>
+      )}
 
       {/* Mobile Drawer */}
       {isMobileOpen && (

@@ -19,6 +19,7 @@ interface MarkdownPreviewProps {
   onTocOpenChange?: (open: boolean) => void;
   currentFilePath?: string;
   onInternalLinkClick?: (filePath: string) => void;
+  hideFloatingTocButton?: boolean;
 }
 
 export function MarkdownPreview({
@@ -28,6 +29,7 @@ export function MarkdownPreview({
   onTocOpenChange,
   currentFilePath,
   onInternalLinkClick,
+  hideFloatingTocButton = false,
 }: MarkdownPreviewProps) {
   const [html, setHtml] = useState<string>('');
   const [headings, setHeadings] = useState<TocHeading[]>([]);
@@ -356,6 +358,7 @@ export function MarkdownPreview({
           containerRef={containerRef}
           isDesktopOpen={isTocOpen}
           onClose={() => onTocOpenChange?.(false)}
+          hideFloatingButton={hideFloatingTocButton}
         />
       )}
 

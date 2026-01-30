@@ -32,6 +32,7 @@ import { HelpModal } from './HelpModal';
 import { Preview } from './Preview';
 import { SettingsModal } from './SettingsModal';
 import { ShareModal } from './ShareButton';
+import { ShareFolderModal } from './ShareFolderButton';
 import { Sidebar } from './Sidebar';
 import { StatusBar } from './StatusBar';
 import { TabBar } from './TabBar';
@@ -232,6 +233,7 @@ export function App() {
       <ConflictModal />
       <SettingsModal />
       <ShareModal />
+      <ShareFolderModal />
       <HelpModal />
       <UploadWarningModal />
       <CommandPalette />

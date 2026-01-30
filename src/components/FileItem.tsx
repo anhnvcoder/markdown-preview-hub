@@ -31,6 +31,7 @@ import {
   toggleFolder,
 } from '../stores/file-store';
 import type { VirtualFile } from '../types';
+import { openFolderShareModal } from './ShareFolderButton';
 import { draggingFolderId, inlineCreating } from './Sidebar';
 import { StatusIcon } from './StatusIcon';
 
@@ -595,6 +596,21 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
                         Sync from Disk
                       </button>
                     )}
+                    <div class='h-px bg-border/50 my-1' />
+                    <button
+                      class='w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2'
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        // Use existing ShareButton modal
+                        import('./ShareButton').then(({ isShareModalOpen }) => {
+                          isShareModalOpen.value = true;
+                        });
+                      }}
+                    >
+                      <div class='i-lucide-share-2 w-3 h-3' />
+                      Share
+                    </button>
                   </>
                 )}
 
@@ -608,6 +624,24 @@ export function FileItem({ node, depth = 0 }: FileItemProps) {
                     >
                       <div class='i-lucide-refresh-cw w-3 h-3' />
                       Sync from Disk
+                    </button>
+                  </>
+                )}
+
+                {/* Share Folder option */}
+                {isFolder && (
+                  <>
+                    <div class='h-px bg-border/50 my-1' />
+                    <button
+                      class='w-full px-3 py-1.5 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2'
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        openFolderShareModal(node.id, node.path, node.virtualName);
+                      }}
+                    >
+                      <div class='i-lucide-share-2 w-3 h-3' />
+                      Share Folder
                     </button>
                   </>
                 )}

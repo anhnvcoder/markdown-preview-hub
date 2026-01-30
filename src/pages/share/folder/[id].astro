@@ -1,0 +1,110 @@
+---
+/**
+ * Folder Share view page - SSR rendered shared folder content
+ * Fetches folder data from Redis and renders with sidebar navigation
+ */
+import { Redis } from '@upstash/redis';
+import '../../../styles/global.css';
+import '../../../styles/markdown.css';
+import '../../../styles/toc.css';
+import 'uno.css';
+import { FolderShareView } from '../../../components/FolderShareView';
+import type { TreeNode, FileContent } from '../../../lib/share';
+
+export const prerender = false;
+
+interface FolderShareData {
+  title: string;
+  tree: TreeNode[];
+  files: FileContent[];
+  createdAt: number;
+  expiryDays: number;
+}
+
+const { id } = Astro.params;
+const fileParam = Astro.url.searchParams.get('file');
+
+let shareData: FolderShareData | null = null;
+let error: string | null = null;
+let activeFilePath: string | null = null;
+let activeContent: string = '';
+
+if (!id) {
+  error = 'No share ID provided';
+} else if (!import.meta.env.UPSTASH_REDIS_REST_URL || !import.meta.env.UPSTASH_REDIS_REST_TOKEN) {
+  error = 'Share feature not configured';
+} else {
+  try {
+    const redis = new Redis({
+      url: import.meta.env.UPSTASH_REDIS_REST_URL,
+      token: import.meta.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+
+    const key = `share:folder:${id}`;
+    const data = await redis.get(key);
+
+    if (data) {
+      shareData = typeof data === 'string' ? JSON.parse(data) : data;
+
+      // Determine active file from URL param only
+      if (fileParam && shareData) {
+        const matchingFile = shareData.files.find(f => f.path === fileParam);
+        if (matchingFile) {
+          activeFilePath = fileParam;
+          activeContent = matchingFile.content;
+        }
+      }
+      // No default file - user must select from sidebar
+    } else {
+      error = 'Share not found or has expired';
+    }
+  } catch (err) {
+    console.error('[share/folder/[id]] Error fetching share:', err);
+    error = 'Failed to load share';
+  }
+}
+
+if (error && error.includes('not found')) {
+  Astro.response.status = 404;
+}
+
+const title = shareData?.title || 'Shared Folder';
+const pageTitle = `${title} - MD Preview Hub`;
+---
+
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%237c3aed' width='32' height='32' rx='6'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' fill='white' font-weight='bold' font-size='14'>MD</text></svg>" />
+    <meta name="description" content={`Shared folder: ${title}`} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={`View shared folder: ${title}`} />
+  </head>
+  <body class="min-h-screen bg-background text-foreground">
+    {error ? (
+      <div class="flex flex-col items-center justify-center min-h-screen gap-4 p-8">
+        <div class="i-lucide-folder-x w-16 h-16 text-muted-foreground" />
+        <h1 class="text-2xl font-semibold">{error}</h1>
+        <p class="text-muted-foreground">
+          This share link may have expired or been removed.
+        </p>
+        <a href="/" class="btn-primary mt-4">
+          Go to MD Preview Hub
+        </a>
+      </div>
+    ) : (
+      <FolderShareView
+        client:load
+        title={shareData!.title}
+        tree={shareData!.tree}
+        files={shareData!.files}
+        activePath={activeFilePath || ''}
+        activeContent={activeContent}
+        createdAt={shareData!.createdAt}
+        expiryDays={shareData!.expiryDays}
+      />
+    )}
+  </body>
+</html>
